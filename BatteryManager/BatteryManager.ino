@@ -4,9 +4,9 @@
 #define nominalCuttoffVoltage 3.7
 #define depletedCutoffVoltage 3.0
 
-#define RedLED 2
-#define YellowLED 3
-#define GreenLED 4
+#define redLED 2
+#define yellowLED 3
+#define greenLED 4
 
 #define cell1Pin A0
 
@@ -34,12 +34,12 @@ void setup() {
 
   analogReference(DEFAULT);
 
-  pinMode(RedLED, OUTPUT);
-  pinMode(YellowLED, OUTPUT);
-  pinMode(GreenLED, OUTPUT);
-  digitalWrite(RedLED, LOW);
-  digitalWrite(YellowLED, LOW);
-  digitalWrite(GreenLED, LOW);
+  pinMode(redLED, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(greenLED, OUTPUT);
+  digitalWrite(redLED, LOW);
+  digitalWrite(yellowLED, LOW);
+  digitalWrite(greenLED, LOW);
 }
 
 void loop() {
@@ -85,21 +85,21 @@ Battery updateBattery() {
   battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
   if ( (battery.cellVoltages[0] <= depletedCutoffVoltage) || (battery.cellVoltages[1] <= depletedCutoffVoltage) || (battery.cellVoltages[2] <= depletedCutoffVoltage) ) {
-    digitalWrite(RedLED, HIGH);
-    digitalWrite(YellowLED, LOW);
-    digitalWrite(GreenLED, LOW);
+    digitalWrite(redLED, HIGH);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(greenLED, LOW);
     battery.status = 2;
   }
   else if ( (battery.cellVoltages[0] <= nominalCuttoffVoltage) || (battery.cellVoltages[1] <= nominalCuttoffVoltage) || (battery.cellVoltages[2] <= nominalCuttoffVoltage) ) {
-    digitalWrite(RedLED, LOW);
-    digitalWrite(YellowLED, HIGH);
-    digitalWrite(GreenLED, LOW);
+    digitalWrite(redLED, LOW);
+    digitalWrite(yellowLED, HIGH);
+    digitalWrite(greenLED, LOW);
     battery.status = 1;
   }
   else {
-    digitalWrite(RedLED, LOW);
-    digitalWrite(YellowLED, LOW);
-    digitalWrite(GreenLED, HIGH);
+    digitalWrite(redLED, LOW);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(greenLED, HIGH);
     battery.status = 0;
   }
 
