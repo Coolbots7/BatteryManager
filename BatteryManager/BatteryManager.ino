@@ -11,8 +11,8 @@
 #define cell1Pin A0
 
 #define cell2Pin A1
-#define cell2Resistor1 1
-#define cell2Resistor2 1.154
+#define cell2Resistor1 0.979
+#define cell2Resistor2 1.152
 
 #define cell3Pin A2
 #define cell3Resistor1 2
@@ -71,7 +71,7 @@ void wireRequest() {
   Battery battery = updateBattery();
 
   byte buffer[sizeof(battery)];
-  memcpy(buffer, &battery, sizeof(battery));  
+  memcpy(buffer, &battery, sizeof(battery));
   Wire.write(buffer, sizeof(buffer));
 }
 
@@ -81,9 +81,10 @@ Battery updateBattery() {
   battery.cell1 = Voltage(cell1Pin);
   battery.cell2 = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2) - battery.cell1;
   battery.cell3 = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2) - Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
-  battery.battery = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2);
+  //  battery.battery = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2);
+  battery.battery = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
 
-  battery.current = Map(analogRead(currentPin), 0, 1023, 20000, -20000);
+  battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
   if ( (battery.cell1 <= depletedCutoffVoltage) || (battery.cell2 <= depletedCutoffVoltage) || (battery.cell3 <= depletedCutoffVoltage) ) {
     digitalWrite(RedLED, HIGH);
@@ -112,10 +113,9 @@ float Voltage(int analogPin, float resistor1, float resistor2) {
 }
 
 float Voltage(int analogPin) {
-  return Map(analogRead(analogPin), 0.0, 1023.0, 0.0, 4.88);
+  return mapf(analogRead(analogPin), 0.0, 1023.0, 0.0, 4.88);
 }
 
-float Map(float in, float fromLow, float fromHigh, float toLow, float toHigh) {
+float mapf(float in, float fromLow, float fromHigh, float toLow, float toHigh) {
   return (in - fromLow) / (fromHigh - fromLow) * (toHigh - toLow) + toLow;
 }
-
