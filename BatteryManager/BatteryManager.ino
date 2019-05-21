@@ -1,8 +1,11 @@
 #include <Wire.h>
 #define WIRE_ID 8
 
-#define nominalCuttoffVoltage 3.7
-#define depletedCutoffVoltage 3.0
+#define NUM_CELLS 2
+
+#define cellChargedVoltage 4.2
+#define cellNominalVoltage 3.7
+#define cellCriticalVoltage 3.0
 
 #define redLED 2
 #define yellowLED 3
@@ -21,7 +24,7 @@
 #define currentPin A3
 
 struct Battery {
-  float cellVoltages[8];
+  float cellVoltages[NUM_CELLS];
   float batteryVoltage;
   float current;
   byte status;
@@ -46,7 +49,7 @@ void loop() {
 
   Battery battery = updateBattery();
 
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < NUM_CELLS; i++) {
     Serial.print("Cell ");Serial.print(i);Serial.print(" Voltage: " );
     Serial.println(battery.cellVoltages[i]);
   }
@@ -84,23 +87,40 @@ Battery updateBattery() {
 
   battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
-  if ( (battery.cellVoltages[0] <= depletedCutoffVoltage) || (battery.cellVoltages[1] <= depletedCutoffVoltage) || (battery.cellVoltages[2] <= depletedCutoffVoltage) ) {
-    digitalWrite(redLED, HIGH);
-    digitalWrite(yellowLED, LOW);
-    digitalWrite(greenLED, LOW);
-    battery.status = 2;
+  battery.status = 0;
+  
+  for(int i=0;i<NUM_CELLS;i++) {
+    if(battery.cellVoltages[i] > cellChargedVoltage) {
+      battery.status = 1;
+    }
   }
-  else if ( (battery.cellVoltages[0] <= nominalCuttoffVoltage) || (battery.cellVoltages[1] <= nominalCuttoffVoltage) || (battery.cellVoltages[2] <= nominalCuttoffVoltage) ) {
-    digitalWrite(redLED, LOW);
-    digitalWrite(yellowLED, HIGH);
-    digitalWrite(greenLED, LOW);
-    battery.status = 1;
+
+  for(int i=0;i<NUM_CELLS;i++) {
+    if(battery.cellVoltages[i] <= cellNominalVoltage) {
+      battery.status = 2;
+    }
   }
-  else {
+
+  for(int i=0;i<NUM_CELLS;i++) {
+    if(battery.cellVoltages[i] <= cellCriticalVoltage) {
+      battery.status = 3;
+    }
+  }
+
+  if(battery.status == 0) {
     digitalWrite(redLED, LOW);
     digitalWrite(yellowLED, LOW);
     digitalWrite(greenLED, HIGH);
-    battery.status = 0;
+  }
+  else if(battery.status == 2 || battery.status == 1) {
+    digitalWrite(redLED, LOW);
+    digitalWrite(yellowLED, HIGH);
+    digitalWrite(greenLED, LOW);
+  }
+  else if(battery.status == 3) {
+    digitalWrite(redLED, HIGH);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(greenLED, LOW);
   }
 
   return battery;
