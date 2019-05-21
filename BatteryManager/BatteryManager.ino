@@ -21,10 +21,8 @@
 #define currentPin A3
 
 struct Battery {
-  float cell1;
-  float cell2;
-  float cell3;
-  float battery;
+  float cellVoltages[8];
+  float batteryVoltage;
   float current;
   byte status;
 };
@@ -48,20 +46,20 @@ void loop() {
 
   Battery battery = updateBattery();
 
-  Serial.print("Cell 1: " );
-  Serial.print(battery.cell1);
-  Serial.print("\tCell 2: ");
-  Serial.print(battery.cell2);
-  Serial.print("\tCell 3: ");
-  Serial.print(battery.cell3);
-  Serial.print("\tBattery: ");
-  Serial.print(battery.battery);
+  for (int i = 0; i < 8; i++) {
+    Serial.print("Cell ");Serial.print(i);Serial.print(" Voltage: " );
+    Serial.println(battery.cellVoltages[i]);
+  }
+
+  Serial.print("Battery Voltage: ");
+  Serial.println(battery.batteryVoltage);
   Serial.print("\tCurrent (mA): ");
-  Serial.print(battery.current);
+  Serial.println(battery.current);
   Serial.print("\tStatus: ");
   Serial.println(battery.status);
-
-  delay(100);
+  Serial.println();
+  
+  delay(500);
 
 }
 
@@ -78,21 +76,21 @@ void wireRequest() {
 Battery updateBattery() {
   Battery battery;
 
-  battery.cell1 = Voltage(cell1Pin);
-  battery.cell2 = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2) - battery.cell1;
-  battery.cell3 = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2) - Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
+  battery.cellVoltages[0] = Voltage(cell1Pin);
+  battery.cellVoltages[1] = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2) - battery.cellVoltages[0];
+  battery.cellVoltages[2] = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2) - battery.cellVoltages[1];
   //  battery.battery = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2);
-  battery.battery = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
+  battery.batteryVoltage = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
 
   battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
-  if ( (battery.cell1 <= depletedCutoffVoltage) || (battery.cell2 <= depletedCutoffVoltage) || (battery.cell3 <= depletedCutoffVoltage) ) {
+  if ( (battery.cellVoltages[0] <= depletedCutoffVoltage) || (battery.cellVoltages[1] <= depletedCutoffVoltage) || (battery.cellVoltages[2] <= depletedCutoffVoltage) ) {
     digitalWrite(RedLED, HIGH);
     digitalWrite(YellowLED, LOW);
     digitalWrite(GreenLED, LOW);
     battery.status = 2;
   }
-  else if ( (battery.cell1 <= nominalCuttoffVoltage) || (battery.cell2 <= nominalCuttoffVoltage) || (battery.cell3 <= nominalCuttoffVoltage) ) {
+  else if ( (battery.cellVoltages[0] <= nominalCuttoffVoltage) || (battery.cellVoltages[1] <= nominalCuttoffVoltage) || (battery.cellVoltages[2] <= nominalCuttoffVoltage) ) {
     digitalWrite(RedLED, LOW);
     digitalWrite(YellowLED, HIGH);
     digitalWrite(GreenLED, LOW);
