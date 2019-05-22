@@ -1,11 +1,13 @@
+#include <EEPROM.h>
+
 #include <Wire.h>
 #define WIRE_ID 8
 
 #define NUM_CELLS 2
 
-#define cellChargedVoltage 4.2
-#define cellNominalVoltage 3.7
-#define cellCriticalVoltage 3.0
+#define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
+#define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
+#define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
 
 #define redLED 2
 #define yellowLED 3
@@ -30,6 +32,10 @@ struct Battery {
   byte status;
 };
 
+float cellChargedVoltage;
+float cellNominalVoltage;
+float cellCriticalVoltage;
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(WIRE_ID);
@@ -43,6 +49,10 @@ void setup() {
   digitalWrite(redLED, LOW);
   digitalWrite(yellowLED, LOW);
   digitalWrite(greenLED, LOW);
+
+  cellChargedVoltage = getCellChargedVoltageEEPROM();
+  cellNominalVoltage = getCellNominalVoltageEEPROM();
+  cellCriticalVoltage = getCellCriticalVoltageEEPROM();
 }
 
 void loop() {
@@ -50,18 +60,18 @@ void loop() {
   Battery battery = updateBattery();
 
   for (int i = 0; i < NUM_CELLS; i++) {
-    Serial.print("Cell ");Serial.print(i);Serial.print(" Voltage: " );
+    Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
     Serial.println(battery.cellVoltages[i]);
   }
 
   Serial.print("Battery Voltage: ");
   Serial.println(battery.batteryVoltage);
-  Serial.print("\tCurrent (mA): ");
+  Serial.print("Current (mA): ");
   Serial.println(battery.current);
-  Serial.print("\tStatus: ");
+  Serial.print("Status: ");
   Serial.println(battery.status);
   Serial.println();
-  
+
   delay(500);
 
 }
@@ -88,36 +98,36 @@ Battery updateBattery() {
   battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
   battery.status = 0;
-  
-  for(int i=0;i<NUM_CELLS;i++) {
-    if(battery.cellVoltages[i] > cellChargedVoltage) {
+
+  for (int i = 0; i < NUM_CELLS; i++) {
+    if (battery.cellVoltages[i] > cellChargedVoltage) {
       battery.status = 1;
     }
   }
 
-  for(int i=0;i<NUM_CELLS;i++) {
-    if(battery.cellVoltages[i] <= cellNominalVoltage) {
+  for (int i = 0; i < NUM_CELLS; i++) {
+    if (battery.cellVoltages[i] <= cellNominalVoltage) {
       battery.status = 2;
     }
   }
 
-  for(int i=0;i<NUM_CELLS;i++) {
-    if(battery.cellVoltages[i] <= cellCriticalVoltage) {
+  for (int i = 0; i < NUM_CELLS; i++) {
+    if (battery.cellVoltages[i] <= cellCriticalVoltage) {
       battery.status = 3;
     }
   }
 
-  if(battery.status == 0) {
+  if (battery.status == 0) {
     digitalWrite(redLED, LOW);
     digitalWrite(yellowLED, LOW);
     digitalWrite(greenLED, HIGH);
   }
-  else if(battery.status == 2 || battery.status == 1) {
+  else if (battery.status == 2 || battery.status == 1) {
     digitalWrite(redLED, LOW);
     digitalWrite(yellowLED, HIGH);
     digitalWrite(greenLED, LOW);
   }
-  else if(battery.status == 3) {
+  else if (battery.status == 3) {
     digitalWrite(redLED, HIGH);
     digitalWrite(yellowLED, LOW);
     digitalWrite(greenLED, LOW);
@@ -136,4 +146,35 @@ float Voltage(int analogPin) {
 
 float mapf(float in, float fromLow, float fromHigh, float toLow, float toHigh) {
   return (in - fromLow) / (fromHigh - fromLow) * (toHigh - toLow) + toLow;
+}
+
+
+void setCellChargedVoltageEEPROM(float voltage) {
+  EEPROM.put(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
+  cellChargedVoltage = voltage;
+}
+float getCellChargedVoltageEEPROM() {
+  float voltage = 0.00f;
+  EEPROM.get(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
+  return voltage;
+}
+
+void setCellNominalVoltageEEPROM(float voltage) {
+  EEPROM.put(CELL_NOMINAL_VOLTAGE_EEPROM_ADDR, voltage);
+  cellNominalVoltage = voltage;
+}
+float getCellNominalVoltageEEPROM() {
+  float voltage = 0.00f;
+  EEPROM.get(CELL_NOMINAL_VOLTAGE_EEPROM_ADDR, voltage);
+  return voltage;
+}
+
+void setCellCriticalVoltageEEPROM(float voltage) {
+  EEPROM.put(CELL_CRITICAL_VOLTAGE_EEPROM_ADDR, voltage);
+  cellCriticalVoltage = voltage;
+}
+float getCellCriticalVoltageEEPROM() {
+  float voltage = 0.00f;
+  EEPROM.get(CELL_CRITICAL_VOLTAGE_EEPROM_ADDR, voltage);
+  return voltage;
 }
