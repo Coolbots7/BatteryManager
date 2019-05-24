@@ -159,14 +159,6 @@ Battery updateBattery() {
   return battery;
 }
 
-float Voltage(int analogPin, float resistor1, float resistor2) {
-  return Voltage(analogPin) / (resistor2 / (resistor1 + resistor2));
-}
-
-float Voltage(int analogPin) {
-  return mapf(analogRead(analogPin), 0.0, 1023.0, 0.0, 4.88);
-}
-
 double GetCellVoltage(uint8_t Index) {
   double CellVoltage = 0;
   if (Index == 0) {
@@ -191,10 +183,6 @@ float GetBankVoltageAtIndex(uint8_t Index) {
   }
 
   return analogValue  * ((0.1875f / 1000.0f) * ((VOLTAGE_DIVIDER_R1[Index] + VOLTAGE_DIVIDER_R2[Index]) / VOLTAGE_DIVIDER_R2[Index]));
-}
-
-float mapf(float in, float fromLow, float fromHigh, float toLow, float toHigh) {
-  return (in - fromLow) / (fromHigh - fromLow) * (toHigh - toLow) + toLow;
 }
 
 void setCellChargedVoltageEEPROM(float voltage) {
