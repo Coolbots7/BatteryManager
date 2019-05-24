@@ -1,18 +1,20 @@
 #include <EEPROM.h>
 #include <Wire.h>
 #include <Adafruit_ADS1015.h>
+#include <Adafruit_NeoPixel.h>
 
 #define WIRE_ID 8
 
 #define NUM_CELLS 2
 
+#define ONE_WIRE_PIN 6
+
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
 
-#define redLED 2
-#define yellowLED 3
-#define greenLED 4
+Adafruit_NeoPixel statusLED(1, ONE_WIRE_PIN, NEO_GRB);
+#define STATUS_LED_BRIGHTNESS 127
 
 #define ADC_GAIN GAIN_TWOTHIRDS
 #define ADC_0_ADDR 0x48
@@ -63,12 +65,7 @@ void setup() {
   ads1.begin();
   ads1.setGain(ADC_GAIN);
 
-  pinMode(redLED, OUTPUT);
-  pinMode(yellowLED, OUTPUT);
-  pinMode(greenLED, OUTPUT);
-  digitalWrite(redLED, LOW);
-  digitalWrite(yellowLED, LOW);
-  digitalWrite(greenLED, LOW);
+  statusLED.begin();
 
   cellChargedVoltage = getCellChargedVoltageEEPROM();
   cellNominalVoltage = getCellNominalVoltageEEPROM();
@@ -137,20 +134,15 @@ Battery updateBattery() {
   }
 
   if (battery.status == 0) {
-    digitalWrite(redLED, LOW);
-    digitalWrite(yellowLED, LOW);
-    digitalWrite(greenLED, HIGH);
+    statusLED.fill(statusLED.Color(0,STATUS_LED_BRIGHTNESS,0));
   }
   else if (battery.status == 2 || battery.status == 1) {
-    digitalWrite(redLED, LOW);
-    digitalWrite(yellowLED, HIGH);
-    digitalWrite(greenLED, LOW);
+    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS,STATUS_LED_BRIGHTNESS,0));
   }
   else if (battery.status == 3) {
-    digitalWrite(redLED, HIGH);
-    digitalWrite(yellowLED, LOW);
-    digitalWrite(greenLED, LOW);
+    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS,0,0));
   }
+  statusLED.show();
 
   return battery;
 }
