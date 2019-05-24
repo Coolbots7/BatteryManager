@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_NeoPixel.h>
+#include <Adafruit_INA219.h>
 
 #define WIRE_ID 8
 
@@ -43,10 +44,13 @@ const float VOLTAGE_DIVIDER_R2[] = {
   0.0f,
 };
 
+Adafruit_INA219 ina219;
+
 struct Battery {
   float cellVoltages[NUM_CELLS];
   float voltage;
   float current;
+  float power;
   byte status;
 };
 
@@ -65,6 +69,8 @@ void setup() {
   ads1.begin();
   ads1.setGain(ADC_GAIN);
 
+  ina219.begin();
+  
   statusLED.begin();
 
   cellChargedVoltage = getCellChargedVoltageEEPROM();
@@ -85,6 +91,8 @@ void loop() {
   Serial.println(battery.voltage);
   Serial.print("Current (mA): ");
   Serial.println(battery.current);
+  Serial.print("Power (mW): ");
+  Serial.println(battery.power);
   Serial.print("Status: ");
   Serial.println(battery.status);
   Serial.println();
@@ -109,9 +117,13 @@ Battery updateBattery() {
   for (int i = 0; i < NUM_CELLS; i++) {
     battery.cellVoltages[i] = GetCellVoltage(i);
   }
+  
   battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
+  //another option: use ina219 to calcuate load voltage
+  //battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
 
-  //battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
+  battery.current = ina219.getCurrent_mA();
+  battery.power = ina219.getPower_mW();
 
   battery.status = 0;
 
