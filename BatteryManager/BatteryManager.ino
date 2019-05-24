@@ -6,6 +6,8 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#define RATE 10
+
 #define WIRE_ID 8
 
 #define NUM_CELLS 2
@@ -93,31 +95,34 @@ void setup() {
   cellCriticalVoltage = getCellCriticalVoltageEEPROM();
 }
 
+unsigned long prevPollTime = millis();
 void loop() {
   //Update temperature sensors
   if (tempSensor.isConversionComplete())
     tempSensor.requestTemperatures();
 
-  Battery battery = updateBattery();
+  if ((millis() - prevPollTime) > (1000 / RATE)) {
+    prevPollTime = millis();
+    
+    Battery battery = updateBattery();
 
-  for (int i = 0; i < NUM_CELLS; i++) {
-    Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
-    Serial.println(battery.cellVoltages[i]);
+    for (int i = 0; i < NUM_CELLS; i++) {
+      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
+      Serial.println(battery.cellVoltages[i]);
+    }
+
+    Serial.print("Battery Voltage: ");
+    Serial.println(battery.voltage);
+    Serial.print("Current (mA): ");
+    Serial.println(battery.current);
+    Serial.print("Power (mW): ");
+    Serial.println(battery.power);
+    Serial.print("Temperature (C): ");
+    Serial.println(battery.temperature);
+    Serial.print("Status: ");
+    Serial.println(battery.status);
+    Serial.println();
   }
-
-  Serial.print("Battery Voltage: ");
-  Serial.println(battery.voltage);
-  Serial.print("Current (mA): ");
-  Serial.println(battery.current);
-  Serial.print("Power (mW): ");
-  Serial.println(battery.power);
-  Serial.print("Temperature (C): ");
-  Serial.println(battery.temperature);
-  Serial.print("Status: ");
-  Serial.println(battery.status);
-  Serial.println();
-
-  delay(500);
 
 }
 
