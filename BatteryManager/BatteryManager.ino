@@ -3,19 +3,27 @@
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_INA219.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define WIRE_ID 8
 
 #define NUM_CELLS 2
 
-#define ONE_WIRE_PIN 6
+#define LED_ONE_WIRE_PIN 6
+
+#define TEMP_ONE_WIRE_PIN 2
+#define TEMP_RESOLUTION 12
 
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
 
-Adafruit_NeoPixel statusLED(1, ONE_WIRE_PIN, NEO_GRB);
+Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 #define STATUS_LED_BRIGHTNESS 127
+
+OneWire oneWire(TEMP_ONE_WIRE_PIN);
+DallasTemperature tempSensor(&oneWire);
 
 #define ADC_GAIN GAIN_TWOTHIRDS
 #define ADC_0_ADDR 0x48
@@ -51,6 +59,7 @@ struct Battery {
   float voltage;
   float current;
   float power;
+  float temperature;
   byte status;
 };
 
@@ -63,14 +72,20 @@ void setup() {
   Wire.begin(WIRE_ID);
   Wire.onRequest(wireRequest);
 
+  tempSensor.begin();
+  tempSensor.setResolution(TEMP_RESOLUTION);
+  tempSensor.setWaitForConversion(false);
+  tempSensor.setCheckForConversion(true);
+  tempSensor.requestTemperatures();
+
   ads0.begin();
   ads0.setGain(ADC_GAIN);
-  
+
   ads1.begin();
   ads1.setGain(ADC_GAIN);
 
   ina219.begin();
-  
+
   statusLED.begin();
 
   cellChargedVoltage = getCellChargedVoltageEEPROM();
@@ -79,6 +94,9 @@ void setup() {
 }
 
 void loop() {
+  //Update temperature sensors
+  if (tempSensor.isConversionComplete())
+    tempSensor.requestTemperatures();
 
   Battery battery = updateBattery();
 
@@ -93,6 +111,8 @@ void loop() {
   Serial.println(battery.current);
   Serial.print("Power (mW): ");
   Serial.println(battery.power);
+  Serial.print("Temperature (C): ");
+  Serial.println(battery.temperature);
   Serial.print("Status: ");
   Serial.println(battery.status);
   Serial.println();
@@ -117,13 +137,14 @@ Battery updateBattery() {
   for (int i = 0; i < NUM_CELLS; i++) {
     battery.cellVoltages[i] = GetCellVoltage(i);
   }
-  
+
   battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
   //another option: use ina219 to calcuate load voltage
   //battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
 
   battery.current = ina219.getCurrent_mA();
   battery.power = ina219.getPower_mW();
+  battery.temperature = tempSensor.getTempCByIndex(0);
 
   battery.status = 0;
 
@@ -146,13 +167,13 @@ Battery updateBattery() {
   }
 
   if (battery.status == 0) {
-    statusLED.fill(statusLED.Color(0,STATUS_LED_BRIGHTNESS,0));
+    statusLED.fill(statusLED.Color(0, STATUS_LED_BRIGHTNESS, 0));
   }
   else if (battery.status == 2 || battery.status == 1) {
-    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS,STATUS_LED_BRIGHTNESS,0));
+    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, STATUS_LED_BRIGHTNESS, 0));
   }
   else if (battery.status == 3) {
-    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS,0,0));
+    statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, 0, 0));
   }
   statusLED.show();
 
