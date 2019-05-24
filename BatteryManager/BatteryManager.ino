@@ -1,6 +1,7 @@
 #include <EEPROM.h>
-
 #include <Wire.h>
+#include <Adafruit_ADS1015.h>
+
 #define WIRE_ID 8
 
 #define NUM_CELLS 2
@@ -13,21 +14,36 @@
 #define yellowLED 3
 #define greenLED 4
 
-#define cell1Pin A0
+#define ADC_GAIN GAIN_TWOTHIRDS
+#define ADC_0_ADDR 0x48
+#define ADC_1_ADDR 0x49
+Adafruit_ADS1115 ads0(ADC_0_ADDR);
+Adafruit_ADS1115 ads1(ADC_1_ADDR);
+const float VOLTAGE_DIVIDER_R1[] = {
+  0.0f,
+  1.761f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+};
 
-#define cell2Pin A1
-#define cell2Resistor1 0.979
-#define cell2Resistor2 1.152
-
-#define cell3Pin A2
-#define cell3Resistor1 2
-#define cell3Resistor2 1.127
-
-#define currentPin A3
+const float VOLTAGE_DIVIDER_R2[] = {
+  1.0f,
+  3.270f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+  0.0f,
+};
 
 struct Battery {
   float cellVoltages[NUM_CELLS];
-  float batteryVoltage;
+  float voltage;
   float current;
   byte status;
 };
@@ -41,7 +57,11 @@ void setup() {
   Wire.begin(WIRE_ID);
   Wire.onRequest(wireRequest);
 
-  analogReference(DEFAULT);
+  ads0.begin();
+  ads0.setGain(ADC_GAIN);
+  
+  ads1.begin();
+  ads1.setGain(ADC_GAIN);
 
   pinMode(redLED, OUTPUT);
   pinMode(yellowLED, OUTPUT);
@@ -65,7 +85,7 @@ void loop() {
   }
 
   Serial.print("Battery Voltage: ");
-  Serial.println(battery.batteryVoltage);
+  Serial.println(battery.voltage);
   Serial.print("Current (mA): ");
   Serial.println(battery.current);
   Serial.print("Status: ");
@@ -89,13 +109,12 @@ void wireRequest() {
 Battery updateBattery() {
   Battery battery;
 
-  battery.cellVoltages[0] = Voltage(cell1Pin);
-  battery.cellVoltages[1] = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2) - battery.cellVoltages[0];
-  battery.cellVoltages[2] = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2) - battery.cellVoltages[1];
-  //  battery.battery = Voltage(cell3Pin, cell3Resistor1, cell3Resistor2);
-  battery.batteryVoltage = Voltage(cell2Pin, cell2Resistor1, cell2Resistor2);
+  for (int i = 0; i < NUM_CELLS; i++) {
+    battery.cellVoltages[i] = GetCellVoltage(i);
+  }
+  battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
 
-  battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
+  //battery.current = mapf(analogRead(currentPin), 0, 1023, 20000, -20000);
 
   battery.status = 0;
 
@@ -144,10 +163,35 @@ float Voltage(int analogPin) {
   return mapf(analogRead(analogPin), 0.0, 1023.0, 0.0, 4.88);
 }
 
+double GetCellVoltage(uint8_t Index) {
+  double CellVoltage = 0;
+  if (Index == 0) {
+    return GetBankVoltageAtIndex(Index);
+  }
+  else {
+    return (GetBankVoltageAtIndex(Index) - GetBankVoltageAtIndex(Index - 1));
+  }
+  return -1;
+}
+
+float GetBankVoltageAtIndex(uint8_t Index) {
+  uint16_t analogValue = 0;
+  if (Index >= 0 && Index <= 3) {
+    analogValue = ads0.readADC_SingleEnded(Index);
+  }
+  else if (Index > 3 && Index <= 5) {
+    analogValue = ads1.readADC_SingleEnded(Index - 4);
+  }
+  else {
+    return -1;
+  }
+
+  return analogValue  * ((0.1875f / 1000.0f) * ((VOLTAGE_DIVIDER_R1[Index] + VOLTAGE_DIVIDER_R2[Index]) / VOLTAGE_DIVIDER_R2[Index]));
+}
+
 float mapf(float in, float fromLow, float fromHigh, float toLow, float toHigh) {
   return (in - fromLow) / (fromHigh - fromLow) * (toHigh - toLow) + toLow;
 }
-
 
 void setCellChargedVoltageEEPROM(float voltage) {
   EEPROM.put(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
