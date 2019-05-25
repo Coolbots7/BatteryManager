@@ -16,16 +16,15 @@
 #define LED_ONE_WIRE_PIN 6
 
 #define TEMP_ONE_WIRE_PIN 2
-//TODO move temp resolution to EEPROM
-#define TEMP_RESOLUTION 12
-//TOOD add over temp threshold
-//TODO add under temp threshold
 
 //TODO add over current threshold
 
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
+#define TEMP_RESOLUTION_EEPROM_ADDR 12 //12
+#define TEMP_OVERHEAT_EEPROM_ADDR 14 //13-16
+#define TEMP_UNDERHEAT_EEPROM_ADDR 18 //17-20
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 //TODO move led brightness to EEPROM
@@ -78,13 +77,21 @@ float cellChargedVoltage;
 float cellNominalVoltage;
 float cellCriticalVoltage;
 
+uint8_t tempResolution;
+float tempOverheatThreshold;
+float tempUnderheatThreshold;
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(WIRE_ID);
   Wire.onRequest(wireRequest);
 
+  tempResolution = getTempResolutionEEPROM();
+  tempOverheatThreshold = getTempOverheatEEPROM();
+  tempUnderheatThreshold = getTempUnderheatEEPROM();
+
   tempSensor.begin();
-  tempSensor.setResolution(TEMP_RESOLUTION);
+  tempSensor.setResolution(tempResolution);
   tempSensor.setWaitForConversion(false);
   tempSensor.setCheckForConversion(true);
   tempSensor.requestTemperatures();
@@ -112,7 +119,7 @@ void loop() {
 
   if ((millis() - prevPollTime) > (1000 / RATE)) {
     prevPollTime = millis();
-    
+
     Battery battery = updateBattery();
 
     for (int i = 0; i < NUM_CELLS; i++) {
@@ -178,6 +185,13 @@ Battery updateBattery() {
     if (battery.cellVoltages[i] <= cellCriticalVoltage) {
       battery.status = 3;
     }
+  }
+
+  if (battery.temperature >= tempOverheatThreshold) {
+    battery.status = 3;
+  }
+  if (battery.temperature <= tempUnderheatThreshold) {
+    battery.status = 3;
   }
 
   if (battery.status == 0) {
@@ -248,4 +262,35 @@ float getCellCriticalVoltageEEPROM() {
   float voltage = 0.00f;
   EEPROM.get(CELL_CRITICAL_VOLTAGE_EEPROM_ADDR, voltage);
   return voltage;
+}
+
+void setTempResolutionEEPROM(uint8_t resolution) {
+  EEPROM.put(TEMP_RESOLUTION_EEPROM_ADDR, resolution);
+  tempResolution = resolution;
+  tempSensor.setResolution(resolution);
+}
+uint8_t getTempResolutionEEPROM() {
+  uint8_t resolution = 0;
+  EEPROM.get(TEMP_RESOLUTION_EEPROM_ADDR, resolution);
+  return resolution;
+}
+
+void setTempOverheatEEPROM(float threshold) {
+  EEPROM.put(TEMP_OVERHEAT_EEPROM_ADDR, threshold);
+  tempOverheatThreshold = threshold;
+}
+float getTempOverheatEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(TEMP_OVERHEAT_EEPROM_ADDR, threshold);
+  return threshold;
+}
+
+void setTempUnderheatEEPROM(float threshold) {
+  EEPROM.put(TEMP_UNDERHEAT_EEPROM_ADDR, threshold);
+  tempUnderheatThreshold = threshold;
+}
+float getTempUnderheatEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(TEMP_UNDERHEAT_EEPROM_ADDR, threshold);
+  return threshold;
 }
