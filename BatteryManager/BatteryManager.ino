@@ -108,17 +108,17 @@ void loop() {
 
     for (int i = 0; i < NUM_CELLS; i++) {
       Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
-      Serial.println(battery.cellVoltages[i]);
+      Serial.println(battery.cellVoltages[i], 4);
     }
 
     Serial.print("Battery Voltage: ");
-    Serial.println(battery.voltage);
+    Serial.println(battery.voltage, 4);
     Serial.print("Current (mA): ");
-    Serial.println(battery.current);
+    Serial.println(battery.current, 4);
     Serial.print("Power (mW): ");
-    Serial.println(battery.power);
+    Serial.println(battery.power, 4);
     Serial.print("Temperature (C): ");
-    Serial.println(battery.temperature);
+    Serial.println(battery.temperature, 4);
     Serial.print("Status: ");
     Serial.println(battery.status);
     Serial.println();
