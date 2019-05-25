@@ -10,18 +10,25 @@
 
 #define WIRE_ID 8
 
+//TODO move num cells to EEPROM
 #define NUM_CELLS 2
 
 #define LED_ONE_WIRE_PIN 6
 
 #define TEMP_ONE_WIRE_PIN 2
+//TODO move temp resolution to EEPROM
 #define TEMP_RESOLUTION 12
+//TOOD add over temp threshold
+//TODO add under temp threshold
+
+//TODO add over current threshold
 
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
+//TODO move led brightness to EEPROM
 #define STATUS_LED_BRIGHTNESS 127
 
 OneWire oneWire(TEMP_ONE_WIRE_PIN);
@@ -64,6 +71,8 @@ struct Battery {
   float temperature;
   byte status;
 };
+
+//TODO make error code enum
 
 float cellChargedVoltage;
 float cellNominalVoltage;
