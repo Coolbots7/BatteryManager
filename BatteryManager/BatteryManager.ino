@@ -34,9 +34,9 @@ Adafruit_ADS1115 ads0(ADC_0_ADDR);
 Adafruit_ADS1115 ads1(ADC_1_ADDR);
 const float VOLTAGE_DIVIDER_R1[] = {
   0.0f,
-  1.761f,
-  0.0f,
-  0.0f,
+  1.764f,
+  1.468f,
+  6.650f,
   0.0f,
   0.0f,
   0.0f,
@@ -45,9 +45,9 @@ const float VOLTAGE_DIVIDER_R1[] = {
 
 const float VOLTAGE_DIVIDER_R2[] = {
   1.0f,
+  3.290f,
+  0.985f,
   3.270f,
-  0.0f,
-  0.0f,
   0.0f,
   0.0f,
   0.0f,
