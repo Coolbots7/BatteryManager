@@ -11,6 +11,7 @@
 #define WIRE_ID 8
 
 //TODO move num cells to EEPROM
+//TODO autodetect number of cells
 #define NUM_CELLS 2
 
 #define LED_ONE_WIRE_PIN 6
@@ -18,6 +19,7 @@
 #define TEMP_ONE_WIRE_PIN 2
 
 //TODO add over current threshold
+//TODO change temp to over / under - critical / warning thresholds
 
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
@@ -71,7 +73,7 @@ struct Battery {
   byte status;
 };
 
-//TODO make error code enum
+//TODO make error code flags
 
 float cellChargedVoltage;
 float cellNominalVoltage;
