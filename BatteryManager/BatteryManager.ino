@@ -18,15 +18,16 @@
 
 #define TEMP_ONE_WIRE_PIN 2
 
-//TODO add over current threshold
-//TODO change temp to over / under - critical / warning thresholds
+//TODO add over current threshold'pu
 
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
 #define TEMP_RESOLUTION_EEPROM_ADDR 12 //12
-#define TEMP_OVERHEAT_EEPROM_ADDR 14 //13-16
-#define TEMP_UNDERHEAT_EEPROM_ADDR 18 //17-20
+#define TEMP_OVERHEAT_WARNING_EEPROM_ADDR 13 //13-16
+#define TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR 17 //17-20
+#define TEMP_UNDERHEAT_WARNING_EEPROM_ADDR 21 //21-24
+#define TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR 25 //25-28
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 //TODO move led brightness to EEPROM
@@ -80,8 +81,10 @@ float cellNominalVoltage;
 float cellCriticalVoltage;
 
 uint8_t tempResolution;
-float tempOverheatThreshold;
-float tempUnderheatThreshold;
+float tempOverheatWarningThreshold;
+float tempOverheatCriticalThreshold;
+float tempUnderheatWarningThreshold;
+float tempUnderheatCriticalThreshold;
 
 void setup() {
   Serial.begin(115200);
@@ -89,8 +92,10 @@ void setup() {
   Wire.onRequest(wireRequest);
 
   tempResolution = getTempResolutionEEPROM();
-  tempOverheatThreshold = getTempOverheatEEPROM();
-  tempUnderheatThreshold = getTempUnderheatEEPROM();
+  tempOverheatCriticalThreshold = getTempOverheatCriticalEEPROM();
+  tempUnderheatCriticalThreshold = getTempUnderheatCriticalEEPROM();
+  tempOverheatWarningThreshold = getTempOverheatWarningEEPROM();
+  tempUnderheatWarningThreshold = getTempUnderheatWarningEEPROM();
 
   tempSensor.begin();
   tempSensor.setResolution(tempResolution);
@@ -176,6 +181,7 @@ Battery updateBattery() {
       battery.status = 1;
     }
   }
+  
 
   for (int i = 0; i < NUM_CELLS; i++) {
     if (battery.cellVoltages[i] <= cellNominalVoltage) {
@@ -183,18 +189,29 @@ Battery updateBattery() {
     }
   }
 
+  if (battery.temperature  <= tempUnderheatWarningThreshold) {
+    battery.status = 2;
+  }
+
+  if (battery.temperature >= tempOverheatWarningThreshold) {
+    battery.status = 2;
+  }
+
+
   for (int i = 0; i < NUM_CELLS; i++) {
     if (battery.cellVoltages[i] <= cellCriticalVoltage) {
       battery.status = 3;
     }
   }
 
-  if (battery.temperature >= tempOverheatThreshold) {
+  if (battery.temperature >= tempOverheatCriticalThreshold) {
     battery.status = 3;
   }
-  if (battery.temperature <= tempUnderheatThreshold) {
+
+  if (battery.temperature <= tempUnderheatCriticalThreshold) {
     battery.status = 3;
   }
+
 
   if (battery.status == 0) {
     statusLED.fill(statusLED.Color(0, STATUS_LED_BRIGHTNESS, 0));
@@ -277,22 +294,42 @@ uint8_t getTempResolutionEEPROM() {
   return resolution;
 }
 
-void setTempOverheatEEPROM(float threshold) {
-  EEPROM.put(TEMP_OVERHEAT_EEPROM_ADDR, threshold);
-  tempOverheatThreshold = threshold;
+void setTempOverheatCriticalEEPROM(float threshold) {
+  EEPROM.put(TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR, threshold);
+  tempOverheatCriticalThreshold = threshold;
 }
-float getTempOverheatEEPROM() {
+float getTempOverheatCriticalEEPROM() {
   float threshold = 0.0f;
-  EEPROM.get(TEMP_OVERHEAT_EEPROM_ADDR, threshold);
+  EEPROM.get(TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;
 }
 
-void setTempUnderheatEEPROM(float threshold) {
-  EEPROM.put(TEMP_UNDERHEAT_EEPROM_ADDR, threshold);
-  tempUnderheatThreshold = threshold;
+void setTempOverheatWarningEEPROM(float threshold) {
+  EEPROM.put(TEMP_OVERHEAT_WARNING_EEPROM_ADDR, threshold);
+  tempOverheatWarningThreshold = threshold;
 }
-float getTempUnderheatEEPROM() {
+float getTempOverheatWarningEEPROM() {
   float threshold = 0.0f;
-  EEPROM.get(TEMP_UNDERHEAT_EEPROM_ADDR, threshold);
+  EEPROM.get(TEMP_OVERHEAT_WARNING_EEPROM_ADDR, threshold);
+  return threshold;
+}
+
+void setTempUnderheatCriticalEEPROM(float threshold) {
+  EEPROM.put(TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR, threshold);
+  tempUnderheatCriticalThreshold = threshold;
+}
+float getTempUnderheatCriticalEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR, threshold);
+  return threshold;
+}
+
+void setTempUnderheatWarningEEPROM(float threshold) {
+  EEPROM.put(TEMP_UNDERHEAT_WARNING_EEPROM_ADDR, threshold);
+  tempUnderheatWarningThreshold = threshold;
+}
+float getTempUnderheatWarningEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(TEMP_UNDERHEAT_WARNING_EEPROM_ADDR, threshold);
   return threshold;
 }
