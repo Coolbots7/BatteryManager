@@ -31,7 +31,7 @@
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 //TODO move led brightness to EEPROM
-#define STATUS_LED_BRIGHTNESS 127
+#define STATUS_LED_BRIGHTNESS 70
 
 OneWire oneWire(TEMP_ONE_WIRE_PIN);
 DallasTemperature tempSensor(&oneWire);
@@ -122,6 +122,21 @@ void setup() {
   cellChargedVoltage = getCellChargedVoltageEEPROM();
   cellNominalVoltage = getCellNominalVoltageEEPROM();
   cellCriticalVoltage = getCellCriticalVoltageEEPROM();
+
+  Serial.println("Settings loaded from EEPROM:");
+  Serial.print("Cell Charged (V): "); Serial.println(cellChargedVoltage);
+  Serial.print("Cell Nominal (V): "); Serial.println(cellNominalVoltage);
+  Serial.print("Cell Critical (V): "); Serial.println(cellCriticalVoltage);
+  Serial.print("Temp Resolution: "); Serial.println(tempResolution);
+  Serial.print("Temp Overheat Warn (C): "); Serial.println(tempOverheatWarningThreshold);
+  Serial.print("Temp Overheat Crit (C): "); Serial.println(tempOverheatCriticalThreshold);
+  Serial.print("Temp Underheat Warn (C): "); Serial.println(tempUnderheatWarningThreshold);
+  Serial.print("Temp Underheat Crit (C): "); Serial.println(tempUnderheatCriticalThreshold);
+  Serial.print("Current Warn (mA): "); Serial.println(currentWarningThreshold);
+  Serial.print("Current Crit (mA): "); Serial.println(currentCriticalThreshold);  
+  Serial.println();
+
+  delay(2000);
 }
 
 unsigned long prevPollTime = millis();
