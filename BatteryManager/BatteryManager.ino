@@ -18,8 +18,6 @@
 
 #define TEMP_ONE_WIRE_PIN 2
 
-//TODO add over current threshold'pu
-
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
@@ -28,6 +26,8 @@
 #define TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR 17 //17-20
 #define TEMP_UNDERHEAT_WARNING_EEPROM_ADDR 21 //21-24
 #define TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR 25 //25-28
+#define CURRENT_WARNING_EERPOM_ADDR 29 //29-32
+#define CURRENT_CRITICAL_EEPROM_ADDR 33 //33-36
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 //TODO move led brightness to EEPROM
@@ -86,6 +86,9 @@ float tempOverheatCriticalThreshold;
 float tempUnderheatWarningThreshold;
 float tempUnderheatCriticalThreshold;
 
+float currentWarningThreshold;
+float currentCriticalThreshold;
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(WIRE_ID);
@@ -96,6 +99,9 @@ void setup() {
   tempUnderheatCriticalThreshold = getTempUnderheatCriticalEEPROM();
   tempOverheatWarningThreshold = getTempOverheatWarningEEPROM();
   tempUnderheatWarningThreshold = getTempUnderheatWarningEEPROM();
+
+  currentWarningThreshold = getCurrentWarningEEPROM();
+  currentCriticalThreshold = getCurrentCriticalEEPROM();
 
   tempSensor.begin();
   tempSensor.setResolution(tempResolution);
@@ -197,6 +203,10 @@ Battery updateBattery() {
     battery.status = 2;
   }
 
+  if(battery.current >= currentWarningThreshold) {
+    battery.status = 2;
+  }
+
 
   for (int i = 0; i < NUM_CELLS; i++) {
     if (battery.cellVoltages[i] <= cellCriticalVoltage) {
@@ -209,6 +219,10 @@ Battery updateBattery() {
   }
 
   if (battery.temperature <= tempUnderheatCriticalThreshold) {
+    battery.status = 3;
+  }
+
+  if(battery.current >= currentCriticalThreshold) {
     battery.status = 3;
   }
 
@@ -331,5 +345,25 @@ void setTempUnderheatWarningEEPROM(float threshold) {
 float getTempUnderheatWarningEEPROM() {
   float threshold = 0.0f;
   EEPROM.get(TEMP_UNDERHEAT_WARNING_EEPROM_ADDR, threshold);
+  return threshold;
+}
+
+void setCurrentWarningEEPROM(float threshold) {
+  EEPROM.put(CURRENT_WARNING_EERPOM_ADDR, threshold);
+  currentWarningThreshold = threshold;
+}
+float getCurrentWarningEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(CURRENT_WARNING_EERPOM_ADDR, threshold);
+  return threshold;
+}
+
+void setCurrentCriticalEEPROM(float threshold) {
+  EEPROM.put(CURRENT_CRITICAL_EEPROM_ADDR, threshold);
+  currentCriticalThreshold = threshold;
+}
+float getCurrentCriticalEEPROM() {
+  float threshold = 0.0f;
+  EEPROM.get(CURRENT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;
 }
