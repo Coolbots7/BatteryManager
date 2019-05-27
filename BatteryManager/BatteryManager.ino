@@ -74,20 +74,20 @@ const float VOLTAGE_DIVIDER_R2[] = {
 #define CURRENT_WARNING_REGISTER 0x09
 #define CURRENT_CRITICAL_REGISTER 0x0A
 
-#define CELL_0_VOLTAGE_REGISTER 0x10
-#define CELL_1_VOLTAGE_REGISTER 0x20
-#define CELL_2_VOLTAGE_REGISTER 0x30
-#define CELL_3_VOLTAGE_REGISTER 0x40
-#define CELL_4_VOLTAGE_REGISTER 0x50
-#define CELL_5_VOLTAGE_REGISTER 0x60
-#define CELL_6_VOLTAGE_REGISTER 0x70
-#define CELL_7_VOLTAGE_REGISTER 0x80
-#define BATTERY_VOLTAGE_REGISTER 0x90
-#define BATTERY_CURRENT_REGISTER 0xA0
-#define BATTERY_POWER_REGISTER 0xB0
-#define BATTERY_TEMPERATURE_REGISTER 0xC0
-#define BATTERY_ERROR_REGISTER 0xD0
-#define BATTERY_STATUS_REGISTER 0xE0
+#define CELL_0_VOLTAGE_REGISTER       0x10
+#define CELL_1_VOLTAGE_REGISTER       0x20
+#define CELL_2_VOLTAGE_REGISTER       0x30
+#define CELL_3_VOLTAGE_REGISTER       0x40
+#define CELL_4_VOLTAGE_REGISTER       0x50
+#define CELL_5_VOLTAGE_REGISTER       0x60
+#define CELL_6_VOLTAGE_REGISTER       0x70
+#define CELL_7_VOLTAGE_REGISTER       0x80
+#define BATTERY_VOLTAGE_REGISTER      0x90
+#define BATTERY_CURRENT_REGISTER      0xA0
+#define BATTERY_POWER_REGISTER        0xB0
+#define BATTERY_TEMPERATURE_REGISTER  0xC0
+#define BATTERY_ERROR_REGISTER        0xD0
+#define BATTERY_STATUS_REGISTER       0xE0
 
 Adafruit_INA219 ina219;
 
@@ -179,6 +179,7 @@ void setup() {
   delay(2000);
 }
 
+Battery battery;
 unsigned long prevPollTime = millis();
 void loop() {
   //Update temperature sensors
@@ -188,7 +189,7 @@ void loop() {
   if ((millis() - prevPollTime) > (1000 / RATE)) {
     prevPollTime = millis();
 
-    Battery battery = updateBattery();
+    battery = updateBattery();
 
 //    for (int i = 0; i < NUM_CELLS; i++) {
 //      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
@@ -211,40 +212,27 @@ void loop() {
 
 }
 
+byte floatBuffer[sizeof(float)];
 void wireRequest() {
-  //  Serial.println("Sending Battery info");
-  //
-  //  Battery battery = updateBattery();
-  //
-  //  byte buffer[sizeof(battery)];
-  //  memcpy(buffer, &battery, sizeof(battery));
-  //  Wire.write(buffer, sizeof(buffer));
+  Serial.print("Got request for register: ");
+  Serial.println(wireRegister, HEX);
 
-//  Serial.print("Got request for register: "); Serial.println(wireRegister);
-//  switch (wireRegister) {
-//    case CELL_0_VOLTAGE_REGISTER:
-//      byte buffer[sizeof(float)];
-//      Battery battery = updateBattery();
-//      float cell0Voltage = battery.cellVoltages[0];
-//      memcpy(buffer, &cell0Voltage, sizeof(cell0Voltage));
-//      Wire.write(buffer, sizeof(buffer));
-//      break;
-//    default:
-//      break;
-//  }
+  if (wireRegister == CELL_0_VOLTAGE_REGISTER) {
+    Serial.println("Responding with cell 0 voltage");
+    float cell0Voltage = battery.cellVoltages[0];
+    memcpy(floatBuffer, &cell0Voltage, sizeof(cell0Voltage));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
 }
 
-byte floatBuffer[sizeof(float)];
 void wireReceive(int numBytes) {
   Serial.print("Wire receiving: "); Serial.print(numBytes); Serial.println(" bytes");
-//  if (numBytes == 1) {
-//     Serial.println("Setting wire register");
-//    //wireRegister = Wire.read();
-//    //wireRegister = CELL_0_VOLTAGE_REGISTER;
-//    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
-//  }
-//  else
-  if (numBytes == 5) {
+  if (numBytes == 1) {
+    Serial.println("Setting wire register");
+    wireRegister = Wire.read();
+    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
+  }
+  else if (numBytes == 5) {
     wireRegister = Wire.read();
     Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
 
