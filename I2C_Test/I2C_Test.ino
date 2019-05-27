@@ -30,60 +30,62 @@
 
 #define CELL_0_VOLTAGE_REGISTER 0x0
 
+byte floatBuffer[sizeof(float)];
+
 void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-  Wire.beginTransmission(WIRE_ID);
-  Wire.write(CELL_CHARGED_VOLTAGE_REGISTER);
-  float charged_voltage = 4.2f;
-  byte buffer[sizeof(charged_voltage)];
-  memcpy(buffer, &charged_voltage, sizeof(buffer));
-  Wire.write(buffer, sizeof(buffer));
-  Wire.endTransmission();
-
-
-
-  Wire.beginTransmission(WIRE_ID);
-  Wire.write(CELL_NOMINAL_VOLTAGE_REGISTER);
-  float nominal_voltage = 3.7f;
-  buffer[sizeof(nominal_voltage)];
-  memcpy(buffer, &nominal_voltage, sizeof(buffer));
-  Wire.write(buffer, sizeof(buffer));
-  Wire.endTransmission();
-
-
-
-  Wire.beginTransmission(WIRE_ID);
-  Wire.write(CELL_CRITICAL_VOLTAGE_REGISTER);
-  float critical_voltage = 3.0f;
-  buffer[sizeof(critical_voltage)];
-  memcpy(buffer, &critical_voltage, sizeof(buffer));
-  Wire.write(buffer, sizeof(buffer));
-  Wire.endTransmission();
+  //  Wire.beginTransmission(WIRE_ID);
+  //  Wire.write(CELL_CHARGED_VOLTAGE_REGISTER);
+  //  float charged_voltage = 4.2f;
+  //  byte buffer[sizeof(charged_voltage)];
+  //  memcpy(buffer, &charged_voltage, sizeof(buffer));
+  //  Wire.write(buffer, sizeof(buffer));
+  //  Wire.endTransmission();
+  //
+  //
+  //
+  //  Wire.beginTransmission(WIRE_ID);
+  //  Wire.write(CELL_NOMINAL_VOLTAGE_REGISTER);
+  //  float nominal_voltage = 3.7f;
+  //  buffer[sizeof(nominal_voltage)];
+  //  memcpy(buffer, &nominal_voltage, sizeof(buffer));
+  //  Wire.write(buffer, sizeof(buffer));
+  //  Wire.endTransmission();
+  //
+  //
+  //
+  //  Wire.beginTransmission(WIRE_ID);
+  //  Wire.write(CELL_CRITICAL_VOLTAGE_REGISTER);
+  //  float critical_voltage = 3.0f;
+  //  buffer[sizeof(critical_voltage)];
+  //  memcpy(buffer, &critical_voltage, sizeof(buffer));
+  //  Wire.write(buffer, sizeof(buffer));
+  //  Wire.endTransmission();
+  //  delay(2000);
 }
 
-byte floatBuffer[sizeof(float)];
 void loop() {
-
+  
   //Set the register to the desired value to be read
-//  Wire.beginTransmission(WIRE_ID);
-//  byte reg = 16;
-//  Wire.write(reg);
-//  Wire.endTransmission();
+  Wire.beginTransmission(WIRE_ID);
+  //TODO replace value with declared const
+  byte reg = 0x10;
+  Wire.write(reg);
+  Wire.endTransmission();
+  delay(1000);
   //Request desired value
-//  Wire.requestFrom(WIRE_ID, sizeof(float));
-//
-//  delay(100);
-//  if (Wire.available()) {
-//    for (int i = 0; i < sizeof(floatBuffer); i++) {
-//      floatBuffer[i] = Wire.read();
-//    }
-//
-//    float val;
-//    memcpy(&val, floatBuffer, sizeof(floatBuffer));
-//    Serial.print("Got cell 0 voltage: "); Serial.println(val);
-//  }
-//
-//  delay(1500);
+  Wire.requestFrom(WIRE_ID, sizeof(float));
+  
+  if (Wire.available() >= sizeof(floatBuffer)) {
+    for (int i = 0; i < sizeof(floatBuffer); i++) {
+      floatBuffer[i] = Wire.read();
+    }
+
+    float val;
+    memcpy(&val, floatBuffer, sizeof(floatBuffer));
+    Serial.print("Got cell 0 voltage: "); Serial.println(val);
+  }
+  delay(500);
 }
