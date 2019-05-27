@@ -67,24 +67,6 @@ const float VOLTAGE_DIVIDER_R2[] = {
 #define CELL_NOMINAL_VOLTAGE_REGISTER 0x02
 #define CELL_CRITICAL_VOLTAGE_REGISTER 0x03
 
-#define CELL_CHARGED_VOLTAGE_REGISTER 0x01
-#define CELL_NOMINAL_VOLTAGE_REGISTER 0x02
-#define CELL_CRITICAL_VOLTAGE_REGISTER 0x03
-
-#define redLED 2
-#define yellowLED 3
-#define greenLED 4
-
-#define cell1Pin A0
-
-#define cell2Pin A1
-#define cell2Resistor1 0.979
-#define cell2Resistor2 1.152
-
-#define cell3Pin A2
-#define cell3Resistor1 2
-#define cell3Resistor2 1.127
-
 Adafruit_INA219 ina219;
 
 struct Battery {
