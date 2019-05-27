@@ -71,10 +71,20 @@ struct Battery {
   float current;
   float power;
   float temperature;
+  uint16_t errors;
   byte status;
 };
 
-//TODO make error code flags
+#define ERROR_CELL_OVERVOLTAGE      0x0001
+#define ERROR_CELL_LOW              0x0002
+#define ERROR_CELL_CRITICAL         0x0004
+#define ERROR_OVER_TEMP_WARNING     0x0008
+#define ERROR_OVER_TEMP_CRITICAL    0x0010
+#define ERROR_UNDER_TEMP_WARNING    0x0020
+#define ERROR_UNDER_TEMP_CRITICAL   0x0040
+#define ERROR_CURRENT_WARNING       0x0080
+#define ERROR_CURRENT_CIRITCAL      0x0100
+//IDEA battery disconected error
 
 float cellChargedVoltage;
 float cellNominalVoltage;
@@ -133,7 +143,7 @@ void setup() {
   Serial.print("Temp Underheat Warn (C): "); Serial.println(tempUnderheatWarningThreshold);
   Serial.print("Temp Underheat Crit (C): "); Serial.println(tempUnderheatCriticalThreshold);
   Serial.print("Current Warn (mA): "); Serial.println(currentWarningThreshold);
-  Serial.print("Current Crit (mA): "); Serial.println(currentCriticalThreshold);  
+  Serial.print("Current Crit (mA): "); Serial.println(currentCriticalThreshold);
   Serial.println();
 
   delay(2000);
@@ -163,6 +173,7 @@ void loop() {
     Serial.println(battery.power, 4);
     Serial.print("Temperature (C): ");
     Serial.println(battery.temperature, 4);
+    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
     Serial.print("Status: ");
     Serial.println(battery.status);
     Serial.println();
@@ -183,6 +194,7 @@ void wireRequest() {
 Battery updateBattery() {
   Battery battery;
 
+  //BUG when battery is disconnected cell 0 voltage is approx 0v but cell 1 voltge is ~18v, this causes both cell over and under voltage errors
   for (int i = 0; i < NUM_CELLS; i++) {
     battery.cellVoltages[i] = GetCellVoltage(i);
   }
@@ -195,60 +207,73 @@ Battery updateBattery() {
   battery.power = ina219.getPower_mW();
   battery.temperature = tempSensor.getTempCByIndex(0);
 
-  battery.status = 0;
-
+  battery.errors = 0;
   for (int i = 0; i < NUM_CELLS; i++) {
-    if (battery.cellVoltages[i] > cellChargedVoltage) {
-      battery.status = 1;
+    if (battery.cellVoltages[i] >= cellChargedVoltage) {
+      battery.errors |= ERROR_CELL_OVERVOLTAGE;
     }
+
+    if (battery.cellVoltages[i] <= cellCriticalVoltage) {
+      battery.errors |= ERROR_CELL_CRITICAL;
+    }
+    else if (battery.cellVoltages[i] <= cellNominalVoltage) {
+      battery.errors |= ERROR_CELL_LOW;
+    }
+  }
+
+
+  if (battery.temperature <= tempUnderheatCriticalThreshold) {
+    battery.errors |= ERROR_UNDER_TEMP_CRITICAL;
+  }
+  else if (battery.temperature  <= tempUnderheatWarningThreshold) {
+    battery.errors |= ERROR_UNDER_TEMP_WARNING;
+  }
+
+
+  if (battery.temperature >= tempOverheatCriticalThreshold) {
+    battery.errors |= ERROR_OVER_TEMP_CRITICAL;
+  }
+  else if (battery.temperature >= tempOverheatWarningThreshold) {
+    battery.errors |= ERROR_OVER_TEMP_WARNING;
+  }
+
+  
+  if (battery.current >= currentCriticalThreshold) {
+    battery.errors |= ERROR_CURRENT_CIRITCAL;
+  }
+  else if (battery.current >= currentWarningThreshold) {
+    battery.errors |= ERROR_CURRENT_WARNING;
   }
   
 
-  for (int i = 0; i < NUM_CELLS; i++) {
-    if (battery.cellVoltages[i] <= cellNominalVoltage) {
-      battery.status = 2;
-    }
+  battery.status = 0;
+  if (
+    battery.errors & ERROR_CELL_OVERVOLTAGE ||
+    battery.errors & ERROR_CELL_LOW ||
+    battery.errors & ERROR_UNDER_TEMP_WARNING ||
+    battery.errors & ERROR_OVER_TEMP_WARNING ||
+    battery.errors & ERROR_CURRENT_WARNING
+  ) {
+    battery.status = 1;
   }
 
-  if (battery.temperature  <= tempUnderheatWarningThreshold) {
+  if (
+    battery.errors & ERROR_CELL_CRITICAL ||
+    battery.errors & ERROR_UNDER_TEMP_CRITICAL ||
+    battery.errors & ERROR_OVER_TEMP_CRITICAL ||
+    battery.errors & ERROR_CURRENT_CIRITCAL
+  ) {
     battery.status = 2;
-  }
-
-  if (battery.temperature >= tempOverheatWarningThreshold) {
-    battery.status = 2;
-  }
-
-  if(battery.current >= currentWarningThreshold) {
-    battery.status = 2;
-  }
-
-
-  for (int i = 0; i < NUM_CELLS; i++) {
-    if (battery.cellVoltages[i] <= cellCriticalVoltage) {
-      battery.status = 3;
-    }
-  }
-
-  if (battery.temperature >= tempOverheatCriticalThreshold) {
-    battery.status = 3;
-  }
-
-  if (battery.temperature <= tempUnderheatCriticalThreshold) {
-    battery.status = 3;
-  }
-
-  if(battery.current >= currentCriticalThreshold) {
-    battery.status = 3;
   }
 
 
   if (battery.status == 0) {
     statusLED.fill(statusLED.Color(0, STATUS_LED_BRIGHTNESS, 0));
   }
-  else if (battery.status == 2 || battery.status == 1) {
+  else if (battery.status == 1) {
     statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, STATUS_LED_BRIGHTNESS, 0));
   }
-  else if (battery.status == 3) {
+  else if (battery.status == 2) {
     statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, 0, 0));
   }
   statusLED.show();
