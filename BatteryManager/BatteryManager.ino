@@ -63,6 +63,10 @@ const float VOLTAGE_DIVIDER_R2[] = {
   0.0f,
 };
 
+#define CELL_CHARGED_VOLTAGE_REGISTER 0x01
+#define CELL_NOMINAL_VOLTAGE_REGISTER 0x02
+#define CELL_CRITICAL_VOLTAGE_REGISTER 0x03
+
 Adafruit_INA219 ina219;
 
 struct Battery {
@@ -99,10 +103,14 @@ float tempUnderheatCriticalThreshold;
 float currentWarningThreshold;
 float currentCriticalThreshold;
 
+uint8_t wireRegister;
+
 void setup() {
   Serial.begin(115200);
+
   Wire.begin(WIRE_ID);
   Wire.onRequest(wireRequest);
+  Wire.onReceive(wireReceive);
 
   tempResolution = getTempResolutionEEPROM();
   tempOverheatCriticalThreshold = getTempOverheatCriticalEEPROM();
@@ -182,13 +190,44 @@ void loop() {
 }
 
 void wireRequest() {
-  Serial.println("Sending Battery info");
+  //  Serial.println("Sending Battery info");
+  //
+  //  Battery battery = updateBattery();
+  //
+  //  byte buffer[sizeof(battery)];
+  //  memcpy(buffer, &battery, sizeof(battery));
+  //  Wire.write(buffer, sizeof(buffer));
 
-  Battery battery = updateBattery();
 
-  byte buffer[sizeof(battery)];
-  memcpy(buffer, &battery, sizeof(battery));
-  Wire.write(buffer, sizeof(buffer));
+  switch (wireRegister) {
+    default:
+      break;
+  }
+}
+
+void wireReceive() {
+  if (Wire.available() == 1) {
+    wireRegister = Wire.read();
+  }
+  else if (Wire.available() == 5) {
+    wireRegister = Wire.read();
+
+    uint8_t b1 = Wire.read();
+    uint8_t b2 = Wire.read();
+    uint8_t b3 = Wire.read();
+    uint8_t b4 = Wire.read();
+
+    float val = (float)(b1 << 24 | b2 << 16 | b3 << 8 | b4);
+
+    switch (wireRegister) {
+    case CELL_CHARGED_VOLTAGE_REGISTER:
+      setCellChargedVoltageEEPROM(val);
+        break;
+      default:
+        break;
+    }
+
+  }
 }
 
 Battery updateBattery() {
