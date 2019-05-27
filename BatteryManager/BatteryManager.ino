@@ -6,7 +6,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-#define RATE 10
+#define RATE 1
 
 #define WIRE_ID 8
 
@@ -66,6 +66,28 @@ const float VOLTAGE_DIVIDER_R2[] = {
 #define CELL_CHARGED_VOLTAGE_REGISTER 0x01
 #define CELL_NOMINAL_VOLTAGE_REGISTER 0x02
 #define CELL_CRITICAL_VOLTAGE_REGISTER 0x03
+#define TEMP_RESOLUTION_REGISTER 0x04
+#define TEMP_OVERHEAT_WARNING_REGISTER 0x05
+#define TEMP_OVERHEAT_CRITICAL_REGISTER 0x06
+#define TEMP_UNDERHEAT_WARNING_REGISTER 0x07
+#define TEMP_UNDERHEAT_CRITICAL_REGISTER 0x08
+#define CURRENT_WARNING_REGISTER 0x09
+#define CURRENT_CRITICAL_REGISTER 0x0A
+
+#define CELL_0_VOLTAGE_REGISTER 0x10
+#define CELL_1_VOLTAGE_REGISTER 0x20
+#define CELL_2_VOLTAGE_REGISTER 0x30
+#define CELL_3_VOLTAGE_REGISTER 0x40
+#define CELL_4_VOLTAGE_REGISTER 0x50
+#define CELL_5_VOLTAGE_REGISTER 0x60
+#define CELL_6_VOLTAGE_REGISTER 0x70
+#define CELL_7_VOLTAGE_REGISTER 0x80
+#define BATTERY_VOLTAGE_REGISTER 0x90
+#define BATTERY_CURRENT_REGISTER 0xA0
+#define BATTERY_POWER_REGISTER 0xB0
+#define BATTERY_TEMPERATURE_REGISTER 0xC0
+#define BATTERY_ERROR_REGISTER 0xD0
+#define BATTERY_STATUS_REGISTER 0xE0
 
 Adafruit_INA219 ina219;
 
@@ -103,7 +125,7 @@ float tempUnderheatCriticalThreshold;
 float currentWarningThreshold;
 float currentCriticalThreshold;
 
-uint8_t wireRegister;
+byte wireRegister = CELL_0_VOLTAGE_REGISTER;
 
 void setup() {
   Serial.begin(115200);
@@ -168,23 +190,23 @@ void loop() {
 
     Battery battery = updateBattery();
 
-    for (int i = 0; i < NUM_CELLS; i++) {
-      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
-      Serial.println(battery.cellVoltages[i], 4);
-    }
-
-    Serial.print("Battery Voltage: ");
-    Serial.println(battery.voltage, 4);
-    Serial.print("Current (mA): ");
-    Serial.println(battery.current, 4);
-    Serial.print("Power (mW): ");
-    Serial.println(battery.power, 4);
-    Serial.print("Temperature (C): ");
-    Serial.println(battery.temperature, 4);
-    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
-    Serial.print("Status: ");
-    Serial.println(battery.status);
-    Serial.println();
+//    for (int i = 0; i < NUM_CELLS; i++) {
+//      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
+//      Serial.println(battery.cellVoltages[i], 4);
+//    }
+//
+//    Serial.print("Battery Voltage: ");
+//    Serial.println(battery.voltage, 4);
+//    Serial.print("Current (mA): ");
+//    Serial.println(battery.current, 4);
+//    Serial.print("Power (mW): ");
+//    Serial.println(battery.power, 4);
+//    Serial.print("Temperature (C): ");
+//    Serial.println(battery.temperature, 4);
+//    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
+//    Serial.print("Status: ");
+//    Serial.println(battery.status);
+//    Serial.println();
   }
 
 }
@@ -198,36 +220,66 @@ void wireRequest() {
   //  memcpy(buffer, &battery, sizeof(battery));
   //  Wire.write(buffer, sizeof(buffer));
 
-
-  switch (wireRegister) {
-    default:
-      break;
-  }
+//  Serial.print("Got request for register: "); Serial.println(wireRegister);
+//  switch (wireRegister) {
+//    case CELL_0_VOLTAGE_REGISTER:
+//      byte buffer[sizeof(float)];
+//      Battery battery = updateBattery();
+//      float cell0Voltage = battery.cellVoltages[0];
+//      memcpy(buffer, &cell0Voltage, sizeof(cell0Voltage));
+//      Wire.write(buffer, sizeof(buffer));
+//      break;
+//    default:
+//      break;
+//  }
 }
 
-void wireReceive() {
-  if (Wire.available() == 1) {
+byte floatBuffer[sizeof(float)];
+void wireReceive(int numBytes) {
+  Serial.print("Wire receiving: "); Serial.print(numBytes); Serial.println(" bytes");
+//  if (numBytes == 1) {
+//     Serial.println("Setting wire register");
+//    //wireRegister = Wire.read();
+//    //wireRegister = CELL_0_VOLTAGE_REGISTER;
+//    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
+//  }
+//  else
+  if (numBytes == 5) {
     wireRegister = Wire.read();
-  }
-  else if (Wire.available() == 5) {
-    wireRegister = Wire.read();
+    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
 
-    uint8_t b1 = Wire.read();
-    uint8_t b2 = Wire.read();
-    uint8_t b3 = Wire.read();
-    uint8_t b4 = Wire.read();
+    for (int i = 0; i < numBytes - 1; i++) {
+      floatBuffer[i] = Wire.read();
+    }
 
-    float val = (float)(b1 << 24 | b2 << 16 | b3 << 8 | b4);
+    float val;
+    memcpy(&val, floatBuffer, sizeof(val));
+    Serial.print("Val received: "); Serial.println(val, 4);
 
     switch (wireRegister) {
-    case CELL_CHARGED_VOLTAGE_REGISTER:
-      setCellChargedVoltageEEPROM(val);
+      case CELL_CHARGED_VOLTAGE_REGISTER:
+        Serial.print("Cell charged voltage is currently: "); Serial.println(getCellChargedVoltageEEPROM());
+        Serial.print("Setting cell charged voltage to: "); Serial.println(val);
+        setCellChargedVoltageEEPROM(val);
+        Serial.print("Cell charged voltage set to: "); Serial.println(getCellChargedVoltageEEPROM());
+        break;
+      case CELL_NOMINAL_VOLTAGE_REGISTER:
+        Serial.print("Cell nominal voltage is currently: "); Serial.println(getCellNominalVoltageEEPROM());
+        Serial.print("Setting cell nominal voltage to: "); Serial.println(val);
+        setCellNominalVoltageEEPROM(val);
+        Serial.print("Cell nominal voltage set to: "); Serial.println(getCellNominalVoltageEEPROM());
+        break;
+      case CELL_CRITICAL_VOLTAGE_REGISTER:
+        Serial.print("Cell critical voltage is currently: "); Serial.println(getCellCriticalVoltageEEPROM());
+        Serial.print("Setting cell critical voltage to: "); Serial.println(val);
+        setCellCriticalVoltageEEPROM(val);
+        Serial.print("Cell critical voltage set to: "); Serial.println(getCellCriticalVoltageEEPROM());
         break;
       default:
         break;
     }
-
   }
+  Serial.println("DONE!");
 }
 
 Battery updateBattery() {
@@ -276,14 +328,14 @@ Battery updateBattery() {
     battery.errors |= ERROR_OVER_TEMP_WARNING;
   }
 
-  
+
   if (battery.current >= currentCriticalThreshold) {
     battery.errors |= ERROR_CURRENT_CIRITCAL;
   }
   else if (battery.current >= currentWarningThreshold) {
     battery.errors |= ERROR_CURRENT_WARNING;
   }
-  
+
 
   battery.status = 0;
   if (
