@@ -191,50 +191,171 @@ void loop() {
 
     battery = updateBattery();
 
-//    for (int i = 0; i < NUM_CELLS; i++) {
-//      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
-//      Serial.println(battery.cellVoltages[i], 4);
-//    }
-//
-//    Serial.print("Battery Voltage: ");
-//    Serial.println(battery.voltage, 4);
-//    Serial.print("Current (mA): ");
-//    Serial.println(battery.current, 4);
-//    Serial.print("Power (mW): ");
-//    Serial.println(battery.power, 4);
-//    Serial.print("Temperature (C): ");
-//    Serial.println(battery.temperature, 4);
-//    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
-//    Serial.print("Status: ");
-//    Serial.println(battery.status);
-//    Serial.println();
+    //    for (int i = 0; i < NUM_CELLS; i++) {
+    //      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
+    //      Serial.println(battery.cellVoltages[i], 4);
+    //    }
+    //
+    //    Serial.print("Battery Voltage: ");
+    //    Serial.println(battery.voltage, 4);
+    //    Serial.print("Current (mA): ");
+    //    Serial.println(battery.current, 4);
+    //    Serial.print("Power (mW): ");
+    //    Serial.println(battery.power, 4);
+    //    Serial.print("Temperature (C): ");
+    //    Serial.println(battery.temperature, 4);
+    //    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
+    //    Serial.print("Status: ");
+    //    Serial.println(battery.status);
+    //    Serial.println();
   }
 
 }
 
 byte floatBuffer[sizeof(float)];
+byte uint16Buffer[sizeof(uint16_t)];
 void wireRequest() {
-  Serial.print("Got request for register: ");
-  Serial.println(wireRegister, HEX);
 
   if (wireRegister == CELL_0_VOLTAGE_REGISTER) {
-    Serial.println("Responding with cell 0 voltage");
     float cell0Voltage = battery.cellVoltages[0];
-    memcpy(floatBuffer, &cell0Voltage, sizeof(cell0Voltage));
+    memcpy(floatBuffer, &cell0Voltage, sizeof(floatBuffer));
     Wire.write(floatBuffer, sizeof(floatBuffer));
   }
+  else if (wireRegister == CELL_1_VOLTAGE_REGISTER) {
+    float cell1Voltage = battery.cellVoltages[1];
+    memcpy(floatBuffer, &cell1Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_2_VOLTAGE_REGISTER) {
+    float cell2Voltage = battery.cellVoltages[2];
+    memcpy(floatBuffer, &cell2Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_3_VOLTAGE_REGISTER) {
+    float cell3Voltage = battery.cellVoltages[3];
+    memcpy(floatBuffer, &cell3Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_4_VOLTAGE_REGISTER) {
+    float cell4Voltage = battery.cellVoltages[4];
+    memcpy(floatBuffer, &cell4Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_5_VOLTAGE_REGISTER) {
+    float cell5Voltage = battery.cellVoltages[5];
+    memcpy(floatBuffer, &cell5Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_6_VOLTAGE_REGISTER) {
+    float cell6Voltage = battery.cellVoltages[6];
+    memcpy(floatBuffer, &cell6Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_7_VOLTAGE_REGISTER) {
+    float cell7Voltage = battery.cellVoltages[7];
+    memcpy(floatBuffer, &cell7Voltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == BATTERY_VOLTAGE_REGISTER) {
+    float batteryVoltage = battery.voltage;
+    memcpy(floatBuffer, &batteryVoltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == BATTERY_CURRENT_REGISTER) {
+    float batteryCurrent = battery.current;
+    memcpy(floatBuffer, &batteryCurrent, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == BATTERY_POWER_REGISTER) {
+    float batteryPower = battery.power;
+    memcpy(floatBuffer, &batteryPower, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == BATTERY_TEMPERATURE_REGISTER) {
+    float batteryTemperature = battery.temperature;
+    memcpy(floatBuffer, &batteryTemperature, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == BATTERY_ERROR_REGISTER) {
+    uint16_t batteryErrors = battery.errors;
+    memcpy(uint16Buffer, &batteryErrors, sizeof(uint16Buffer));
+    Wire.write(uint16Buffer, sizeof(uint16Buffer));
+  }
+  else if (wireRegister == BATTERY_STATUS_REGISTER) {
+    byte batteryStatus = battery.status;
+    Wire.write(batteryStatus);
+  }
+  else if (wireRegister == CELL_CHARGED_VOLTAGE_REGISTER) {
+    float cellChargedVoltage = getCellChargedVoltageEEPROM();
+    memcpy(floatBuffer, &cellChargedVoltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_NOMINAL_VOLTAGE_REGISTER) {
+    float cellNominalVoltage = getCellNominalVoltageEEPROM();
+    memcpy(floatBuffer, &cellNominalVoltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CELL_CRITICAL_VOLTAGE_REGISTER) {
+    float cellCriticalVoltage = getCellCriticalVoltageEEPROM();
+    memcpy(floatBuffer, &cellCriticalVoltage, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == TEMP_RESOLUTION_REGISTER) {
+    byte tempResolution = getTempResolutionEEPROM();
+    Wire.write(tempResolution);
+  }
+  else if (wireRegister == TEMP_OVERHEAT_WARNING_REGISTER) {
+    float tempOverheatWarning = getTempOverheatWarningEEPROM();
+    memcpy(floatBuffer, &tempOverheatWarning, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == TEMP_OVERHEAT_CRITICAL_REGISTER) {
+    float tempOverheatCritical = getTempOverheatCriticalEEPROM();
+    memcpy(floatBuffer, &tempOverheatCritical, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == TEMP_UNDERHEAT_WARNING_REGISTER) {
+    float tempUnderheatWarning = getTempUnderheatWarningEEPROM();
+    memcpy(floatBuffer, &tempUnderheatWarning, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == TEMP_UNDERHEAT_CRITICAL_REGISTER) {
+    float tempUnderheatCritical = getTempUnderheatCriticalEEPROM();
+    memcpy(floatBuffer, &tempUnderheatCritical, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CURRENT_WARNING_REGISTER) {
+    float currentWarning = getCurrentWarningEEPROM();
+    memcpy(floatBuffer, &currentWarning, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  else if (wireRegister == CURRENT_CRITICAL_REGISTER) {
+    float currentCritical = getCurrentCriticalEEPROM();
+    memcpy(floatBuffer, &currentCritical, sizeof(floatBuffer));
+    Wire.write(floatBuffer, sizeof(floatBuffer));
+  }
+  
 }
 
 void wireReceive(int numBytes) {
-  Serial.print("Wire receiving: "); Serial.print(numBytes); Serial.println(" bytes");
   if (numBytes == 1) {
-    Serial.println("Setting wire register");
     wireRegister = Wire.read();
-    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
+  }
+  else if (numBytes == 2) {
+    wireRegister = Wire.read();
+
+    byte val = Wire.read();
+
+    switch (wireRegister) {
+      case TEMP_RESOLUTION_REGISTER:
+        setTempResolutionEEPROM(val);
+        break;
+      default:
+        break;
+    }
   }
   else if (numBytes == 5) {
     wireRegister = Wire.read();
-    Serial.print("Wire register set to: "); Serial.println(wireRegister, HEX);
 
     for (int i = 0; i < numBytes - 1; i++) {
       floatBuffer[i] = Wire.read();
@@ -242,32 +363,39 @@ void wireReceive(int numBytes) {
 
     float val;
     memcpy(&val, floatBuffer, sizeof(val));
-    Serial.print("Val received: "); Serial.println(val, 4);
 
     switch (wireRegister) {
       case CELL_CHARGED_VOLTAGE_REGISTER:
-        Serial.print("Cell charged voltage is currently: "); Serial.println(getCellChargedVoltageEEPROM());
-        Serial.print("Setting cell charged voltage to: "); Serial.println(val);
         setCellChargedVoltageEEPROM(val);
-        Serial.print("Cell charged voltage set to: "); Serial.println(getCellChargedVoltageEEPROM());
         break;
       case CELL_NOMINAL_VOLTAGE_REGISTER:
-        Serial.print("Cell nominal voltage is currently: "); Serial.println(getCellNominalVoltageEEPROM());
-        Serial.print("Setting cell nominal voltage to: "); Serial.println(val);
         setCellNominalVoltageEEPROM(val);
-        Serial.print("Cell nominal voltage set to: "); Serial.println(getCellNominalVoltageEEPROM());
         break;
       case CELL_CRITICAL_VOLTAGE_REGISTER:
-        Serial.print("Cell critical voltage is currently: "); Serial.println(getCellCriticalVoltageEEPROM());
-        Serial.print("Setting cell critical voltage to: "); Serial.println(val);
         setCellCriticalVoltageEEPROM(val);
-        Serial.print("Cell critical voltage set to: "); Serial.println(getCellCriticalVoltageEEPROM());
+        break;
+      case TEMP_OVERHEAT_WARNING_REGISTER:
+        setTempOverheatWarningEEPROM(val);
+        break;
+      case TEMP_OVERHEAT_CRITICAL_REGISTER:
+        setTempOverheatCriticalEEPROM(val);
+        break;
+      case TEMP_UNDERHEAT_WARNING_REGISTER:
+        setTempUnderheatWarningEEPROM(val);
+        break;
+      case TEMP_UNDERHEAT_CRITICAL_REGISTER:
+        setTempUnderheatCriticalEEPROM(val);
+        break;
+      case CURRENT_WARNING_REGISTER:
+        setCurrentWarningEEPROM(val);
+        break;
+      case CURRENT_CRITICAL_REGISTER:
+        setCurrentCriticalEEPROM(val);
         break;
       default:
         break;
     }
   }
-  Serial.println("DONE!");
 }
 
 Battery updateBattery() {
