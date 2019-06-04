@@ -103,6 +103,48 @@ float BatteryManager::getCurrentCritical() {
   return getFloat(CURRENT_CRITICAL_REGISTER);
 }
 
+
+void BatteryManager::setCellChargedVoltage(float voltage) {
+     writeRegister(CELL_CHARGED_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
+}
+void BatteryManager::setCellNominalVoltage(float voltage) {
+     writeRegister(CELL_NOMINAL_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
+}
+void BatteryManager::setCellCriticalVoltage(float voltage) {
+     writeRegister(CELL_CRITICAL_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
+}
+void BatteryManager::setTempResolution(byte resolution) {
+     writeRegister(TEMP_RESOLUTION_REGISTER, &resolution, sizeof(resolution));
+}
+void BatteryManager::setOverheatWarningTemperature(float temperature) {
+     writeRegister(TEMP_OVERHEAT_WARNING_REGISTER, &temperature, sizeof(temperature));
+}
+void BatteryManager::setOverheatCriticalTemperature(float temperature) {
+     writeRegister(TEMP_OVERHEAT_CRITICAL_REGISTER, &temperature, sizeof(temperature));
+}
+void BatteryManager::setUnderheatWarningTemperature(float temperature) {
+     writeRegister(TEMP_UNDERHEAT_WARNING_REGISTER, &temperature, sizeof(temperature));
+}
+void BatteryManager::setUnderheatCriticalTemperature(float temperature) {
+     writeRegister(TEMP_UNDERHEAT_CRITICAL_REGISTER, &temperature, sizeof(temperature));
+}
+void BatteryManager::setCurrentWarning(float milliamps) {
+     writeRegister(CURRENT_WARNING_REGISTER, &milliamps, sizeof(milliamps));
+}
+void BatteryManager::setCurrentCritical(float milliamps) {
+     writeRegister(CURRENT_CRITICAL_REGISTER, &milliamps, sizeof(milliamps));
+}
+
+void BatteryManager::writeRegister(byte reg, const void* object, byte size) {
+     byte buffer[size];
+     memcpy(buffer, object, size);
+
+     Wire.beginTransmission(i2caddress);
+     Wire.write(reg);
+     Wire.write(buffer, size);
+     Wire.endTransmission();
+}
+
 float BatteryManager::getFloat(byte reg) {
   float val;
 
