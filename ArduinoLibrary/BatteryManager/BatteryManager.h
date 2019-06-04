@@ -53,7 +53,7 @@
       float getCurrentCritical();
  private:
       uint8_t i2caddress;
-      float getFloat(byte id, byte reg);
-      uint16_t getuint16(byte id, byte reg);
-      byte getByte(byte id, byte reg);
+      float getFloat(byte reg);
+      uint16_t getuint16(byte reg);
+      byte getByte(byte reg);
 };

@@ -45,74 +45,74 @@ float BatteryManager::getCellVoltage(uint8_t cell) {
       break;
   }
 
-  return getFloat(i2caddress, reg);
+  return getFloat(reg);
 }
 
 float BatteryManager::getBatteryVoltage() {
-  return getFloat(i2caddress, BATTERY_VOLTAGE_REGISTER);
+  return getFloat(BATTERY_VOLTAGE_REGISTER);
 }
 
 float BatteryManager::getBatteryCurrent() {
-  return getFloat(i2caddress, BATTERY_CURRENT_REGISTER);
+  return getFloat(BATTERY_CURRENT_REGISTER);
 }
 
 float BatteryManager::getBatteryPower() {
-  return getFloat(i2caddress, BATTERY_POWER_REGISTER);
+  return getFloat(BATTERY_POWER_REGISTER);
 }
 
 float BatteryManager::getBatteryTemperature() {
-  return getFloat(i2caddress, BATTERY_TEMPERATURE_REGISTER);
+  return getFloat(BATTERY_TEMPERATURE_REGISTER);
 }
 
 uint16_t BatteryManager::getBatteryErrors() {
-  return getuint16(i2caddress, BATTERY_ERROR_REGISTER);
+  return getuint16(BATTERY_ERROR_REGISTER);
 }
 
 byte BatteryManager::getBatteryStatus() {
-  return getByte(i2caddress, BATTERY_STATUS_REGISTER);
+  return getByte(BATTERY_STATUS_REGISTER);
 }
 
 float BatteryManager::getCellChargedVoltage() {
-  return getFloat(i2caddress, CELL_CHARGED_VOLTAGE_REGISTER);
+  return getFloat(CELL_CHARGED_VOLTAGE_REGISTER);
 }
 float BatteryManager::getCellNominalVoltage() {
-  return getFloat(i2caddress, CELL_NOMINAL_VOLTAGE_REGISTER);
+  return getFloat(CELL_NOMINAL_VOLTAGE_REGISTER);
 }
 float BatteryManager::getCellCriticalVoltage() {
-  return getFloat(i2caddress, CELL_CRITICAL_VOLTAGE_REGISTER);
+  return getFloat(CELL_CRITICAL_VOLTAGE_REGISTER);
 }
 byte BatteryManager::getTempResolution() {
-  return getByte(i2caddress, TEMP_RESOLUTION_REGISTER);
+  return getByte(TEMP_RESOLUTION_REGISTER);
 }
 float BatteryManager::getOverheatWarningTemperature() {
-  return getFloat(i2caddress, TEMP_OVERHEAT_WARNING_REGISTER);
+  return getFloat(TEMP_OVERHEAT_WARNING_REGISTER);
 }
 float BatteryManager::getOverheatCriticalTemperature() {
-  return getFloat(i2caddress, TEMP_OVERHEAT_CRITICAL_REGISTER);
+  return getFloat(TEMP_OVERHEAT_CRITICAL_REGISTER);
 }
 float BatteryManager::getUnderheatWarningTemperature() {
-  return getFloat(i2caddress, TEMP_UNDERHEAT_WARNING_REGISTER);
+  return getFloat(TEMP_UNDERHEAT_WARNING_REGISTER);
 }
 float BatteryManager::getUnderheatCriticalTemperature() {
-  return getFloat(i2caddress, TEMP_UNDERHEAT_CRITICAL_REGISTER);
+  return getFloat(TEMP_UNDERHEAT_CRITICAL_REGISTER);
 }
 float BatteryManager::getCurrentWarning() {
-  return getFloat(i2caddress, CURRENT_WARNING_REGISTER);
+  return getFloat(CURRENT_WARNING_REGISTER);
 }
 float BatteryManager::getCurrentCritical() {
-  return getFloat(i2caddress, CURRENT_CRITICAL_REGISTER);
+  return getFloat(CURRENT_CRITICAL_REGISTER);
 }
 
-float BatteryManager::getFloat(uint8_t id, byte reg) {
+float BatteryManager::getFloat(byte reg) {
   float val;
 
   //Set the register to the desired value to be read
-  Wire.beginTransmission(id);
+  Wire.beginTransmission(i2caddress);
   //TODO replace value with declared const
   Wire.write(reg);
   Wire.endTransmission();
   //Request desired value
-  Wire.requestFrom(id, sizeof(float));
+  Wire.requestFrom(i2caddress, sizeof(float));
 
 
   byte floatBuffer[sizeof(float)];
@@ -126,27 +126,24 @@ float BatteryManager::getFloat(uint8_t id, byte reg) {
   return val;
 }
 
-uint16_t BatteryManager::getuint16(uint8_t id, byte reg) {
-  float val;
-
+uint16_t BatteryManager::getuint16(byte reg) {
   //Set the register to the desired value to be read
-  Wire.beginTransmission(id);
+  Wire.beginTransmission(i2caddress);
   //TODO replace value with declared const
   Wire.write(reg);
   Wire.endTransmission();
   //Request desired value
-  Wire.requestFrom(id, sizeof(uint16_t));
+  Wire.requestFrom(i2caddress, sizeof(uint16_t));
   return ((Wire.read()<<8) | Wire.read());
 }
 
-byte BatteryManager::getByte(uint8_t id, byte reg) {
-
+byte BatteryManager::getByte(byte reg) {
   //Set the register to the desired value to be read
-  Wire.beginTransmission(id);
+  Wire.beginTransmission(i2caddress);
   //TODO replace value with declared const
   Wire.write(reg);
   Wire.endTransmission();
   //Request desired value
-  Wire.requestFrom(id, sizeof(float));
+  Wire.requestFrom(i2caddress, sizeof(float));
   return Wire.read();
 }
