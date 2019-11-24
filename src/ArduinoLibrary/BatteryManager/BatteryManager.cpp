@@ -52,20 +52,20 @@ float BatteryManager::getCellVoltage(uint8_t index)
   MessageType reg;
   switch (index)
   {
-    case 0:
-      reg = CELL_0_VOLTAGE;
-      break;
-    case 1:
-      reg = CELL_1_VOLTAGE;
-      break;
-    case 2:
-      reg = CELL_2_VOLTAGE;
-      break;
-    case 3:
-      reg = CELL_3_VOLTAGE;
-      break;
-    default:
-      return 0.0f;
+  case 0:
+    reg = CELL_0_VOLTAGE;
+    break;
+  case 1:
+    reg = CELL_1_VOLTAGE;
+    break;
+  case 2:
+    reg = CELL_2_VOLTAGE;
+    break;
+  case 3:
+    reg = CELL_3_VOLTAGE;
+    break;
+  default:
+    return 0.0f;
   }
 
   return getFloat(reg);
@@ -142,6 +142,10 @@ float BatteryManager::getCurrentCritical()
 {
   return getFloat(CURRENT_CRITICAL);
 }
+uint8_t BatteryManager::getLEDBrightness()
+{
+  return getByte(LED_BRIGHTNESS);
+}
 
 // ============ Set EEPROM Settings ============
 void BatteryManager::setCellChargedVoltage(float voltage)
@@ -197,8 +201,10 @@ void BatteryManager::getData(MessageType message_type, void *destination, uint8_
   Wire.requestFrom(wire_address, num_bytes);
 
   unsigned long wait_start = millis();
-  while ( (Wire.available() <= 0) && (millis() - wait_start < REQUEST_TIMEOUT));
-  if(millis() - wait_start >= REQUEST_TIMEOUT) {
+  while ((Wire.available() <= 0) && (millis() - wait_start < REQUEST_TIMEOUT))
+    ;
+  if (millis() - wait_start >= REQUEST_TIMEOUT)
+  {
     Serial.println("I2C REQUEST TIMEOUT");
     return;
   }

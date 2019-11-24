@@ -623,6 +623,9 @@ void requestEvent()
   {
     sendData(&num_cells, sizeof(num_cells));
   }
+  else if(request_type == LED_BRIGHTNESS) {
+    sendData(&led_brightness, sizeof(led_brightness));
+  }
 }
 
 //Function to send bytes to I2C master
