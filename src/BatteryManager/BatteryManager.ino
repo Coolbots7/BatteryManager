@@ -6,9 +6,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-//TODO allow change update rate
-#define RATE 1
-
 //TODO allow address selection
 #define WIRE_ID 8
 
@@ -33,6 +30,7 @@
 #define CURRENT_WARNING_EERPOM_ADDR 29         //29-32
 #define CURRENT_CRITICAL_EEPROM_ADDR 33        //33-36
 #define LED_BRIGHTNESS_EEPROM_ADDR 37          //37
+#define REFRESH_RATE_EEPROM_ADDR 38            //38
 
 Adafruit_NeoPixel status_LED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 
@@ -122,6 +120,8 @@ enum BatteryStatus
 
 Adafruit_INA219 ina219;
 
+uint8_t refresh_rate;
+
 uint8_t num_cells;
 
 float cell_charged_voltage;
@@ -181,6 +181,8 @@ void setup()
 
       setLEDBrightnessEEPROM(70);
 
+      setRefreshRateEEPROM(1);
+
       //Indicate EEPROM flash is complete
       for (int i = 0; i < 3; i++)
       {
@@ -207,6 +209,8 @@ void setup()
       }
     }
   }
+
+  refresh_rate = getRefreshRateEEPROM();
 
   temperature_resolution = getTempResolutionEEPROM();
   temperature_overheat_critical = getTempOverheatCriticalEEPROM();
@@ -286,7 +290,7 @@ void loop()
   if (temperature_sensor.isConversionComplete())
     temperature_sensor.requestTemperatures();
 
-  if ((millis() - prevPollTime) > (1000 / RATE))
+  if ((millis() - prevPollTime) > (1000 / refresh_rate))
   {
     prevPollTime = millis();
 
@@ -623,7 +627,8 @@ void requestEvent()
   {
     sendData(&num_cells, sizeof(num_cells));
   }
-  else if(request_type == LED_BRIGHTNESS) {
+  else if (request_type == LED_BRIGHTNESS)
+  {
     sendData(&led_brightness, sizeof(led_brightness));
   }
 }
@@ -768,4 +773,14 @@ uint8_t getLEDBrightnessEEPROM()
   uint8_t brightness = 0;
   EEPROM.get(LED_BRIGHTNESS_EEPROM_ADDR, brightness);
   return brightness;
+}
+
+//Refresh rate
+void setRefreshRateEEPROM(uint8_t rate) {
+  EEPROM.put(REFRESH_RATE_EEPROM_ADDR, rate);
+}
+uint8_t getRefreshRateEEPROM() {
+  uint8_t rate = 0;
+  EEPROM.get(REFRESH_RATE_EEPROM_ADDR, rate);
+  return rate;
 }
