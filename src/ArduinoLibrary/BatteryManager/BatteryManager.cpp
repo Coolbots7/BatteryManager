@@ -42,6 +42,11 @@ void BatteryManager::printDetails()
 }
 
 // ============ Get Battery Values ============
+uint8_t BatteryManager::getCellCount()
+{
+  return getByte(CELL_COUNT);
+}
+
 float BatteryManager::getCellVoltage(uint8_t index)
 {
   MessageType reg;

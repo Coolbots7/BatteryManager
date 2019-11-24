@@ -45,7 +45,8 @@ enum MessageType
   BATTERY_POWER = 0x87,
   BATTERY_TEMPERATURE = 0x88,
   BATTERY_ERROR = 0x89,
-  BATTERY_STATUS = 0x8A
+  BATTERY_STATUS = 0x8A,
+  CELL_COUNT = 0x8B
 };
 
 //Constant bit flags used to represent battery errors
@@ -78,6 +79,7 @@ class BatteryManager
 
     void printDetails();
 
+    uint8_t getCellCount();
     float getCellVoltage(uint8_t cell);
     float getBatteryVoltage();
     float getBatteryCurrent();

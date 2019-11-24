@@ -44,17 +44,15 @@ DallasTemperature temperature_sensor(&oneWire);
 #define ADC_GAIN GAIN_TWOTHIRDS
 Adafruit_ADS1115 ads_0(ADC_0_ADDR);
 const float VOLTAGE_DIVIDER_R1[] = {
-  0.0f,
-  1.764f,
-  1.468f,
-  6.650f
-};
+    0.0f,
+    1.764f,
+    1.468f,
+    6.650f};
 const float VOLTAGE_DIVIDER_R2[] = {
-  1.0f,
-  3.290f,
-  0.985f,
-  3.270f
-};
+    1.0f,
+    3.290f,
+    0.985f,
+    3.270f};
 
 struct Battery
 {
@@ -91,7 +89,8 @@ enum MessageType
   BATTERY_POWER = 0x87,
   BATTERY_TEMPERATURE = 0x88,
   BATTERY_ERROR = 0x89,
-  BATTERY_STATUS = 0x8A
+  BATTERY_STATUS = 0x8A,
+  CELL_COUNT = 0x8B
 };
 
 struct MessageHeader
@@ -111,7 +110,7 @@ enum BatteryError
   TEMPERATURE_UNDERHEAT_CRITICAL_FLAG = 0x40,
   CURRENT_WARNING_FLAG = 0x80,
   CURRENT_CRITICAL_FLAG = 0x100
-                          //IDEA battery disconected error
+  //IDEA battery disconected error
 };
 
 //Constant values to represent the current status of the battery
@@ -374,20 +373,20 @@ Battery updateBattery()
 
   battery.status = OK;
   if (
-    battery.errors & CELL_OVERVOLTAGE_FLAG ||
-    battery.errors & CELL_LOW_FLAG ||
-    battery.errors & TEMPERATURE_UNDERHEAT_WARNING_FLAG ||
-    battery.errors & TEMPERATURE_OVERHEAT_WARNING_FLAG ||
-    battery.errors & CURRENT_WARNING_FLAG)
+      battery.errors & CELL_OVERVOLTAGE_FLAG ||
+      battery.errors & CELL_LOW_FLAG ||
+      battery.errors & TEMPERATURE_UNDERHEAT_WARNING_FLAG ||
+      battery.errors & TEMPERATURE_OVERHEAT_WARNING_FLAG ||
+      battery.errors & CURRENT_WARNING_FLAG)
   {
     battery.status = WARNING;
   }
 
   if (
-    battery.errors & CELL_CRITICAL_FLAG ||
-    battery.errors & TEMPERATURE_UNDERHEAT_CRITICAL_FLAG ||
-    battery.errors & TEMPERATURE_OVERHEAT_CRITICAL_FLAG ||
-    battery.errors & CURRENT_CRITICAL_FLAG)
+      battery.errors & CELL_CRITICAL_FLAG ||
+      battery.errors & TEMPERATURE_UNDERHEAT_CRITICAL_FLAG ||
+      battery.errors & TEMPERATURE_OVERHEAT_CRITICAL_FLAG ||
+      battery.errors & CURRENT_CRITICAL_FLAG)
   {
     battery.status = CRITICAL;
   }
@@ -459,50 +458,50 @@ void receiveEvent(int num_bytes)
 
   switch (header.message_type)
   {
-    case CELL_CHARGED_VOLTAGE:
-      memcpy(&cell_charged_voltage, receive_data, sizeof(cell_charged_voltage));
-      setCellChargedVoltageEEPROM(cell_charged_voltage);
-      break;
-    case CELL_NOMINAL_VOLTAGE:
-      memcpy(&cell_nominal_voltage, receive_data, sizeof(cell_nominal_voltage));
-      setCellNominalVoltageEEPROM(cell_nominal_voltage);
-      break;
-    case CELL_CRITICAL_VOLTAGE:
-      memcpy(&cell_critical_voltage, receive_data, sizeof(cell_critical_voltage));
-      setCellCriticalVoltageEEPROM(cell_critical_voltage);
-      break;
-    case TEMPERATURE_RESOLUTION:
-      memcpy(&temperature_resolution, receive_data, sizeof(temperature_resolution));
-      temperature_sensor.setResolution(temperature_resolution);
-      setTempResolutionEEPROM(temperature_resolution);
-      break;
-    case TEMPERATURE_OVERHEAT_WARNING:
-      memcpy(&temperature_overheat_critical, receive_data, sizeof(temperature_overheat_critical));
-      setTempOverheatWarningEEPROM(temperature_overheat_critical);
-      break;
-    case TEMPERATURE_OVERHEAT_CRITICAL:
-      memcpy(&temperature_overheat_warning, receive_data, sizeof(temperature_overheat_warning));
-      setTempOverheatCriticalEEPROM(temperature_overheat_warning);
-      break;
-    case TEMPERATURE_UNDERHEAT_WARNING:
-      memcpy(&temperature_underheat_warning, receive_data, sizeof(temperature_underheat_warning));
-      setTempUnderheatWarningEEPROM(temperature_underheat_warning);
-      break;
-    case TEMPERATURE_UNDERHEAT_CRITICAL:
-      memcpy(&temperature_underheat_critical, receive_data, sizeof(temperature_underheat_critical));
-      setTempUnderheatCriticalEEPROM(temperature_underheat_critical);
-      break;
-    case CURRENT_WARNING:
-      memcpy(&current_warning, receive_data, sizeof(current_warning));
-      setCurrentWarningEEPROM(current_warning);
-      break;
-    case CURRENT_CRITICAL:
-      memcpy(&current_critical, receive_data, sizeof(current_critical));
-      setCurrentCriticalEEPROM(current_critical);
-      break;
-    case REQUEST_TYPE:
-      memcpy(&request_type, receive_data, sizeof(request_type));
-      break;
+  case CELL_CHARGED_VOLTAGE:
+    memcpy(&cell_charged_voltage, receive_data, sizeof(cell_charged_voltage));
+    setCellChargedVoltageEEPROM(cell_charged_voltage);
+    break;
+  case CELL_NOMINAL_VOLTAGE:
+    memcpy(&cell_nominal_voltage, receive_data, sizeof(cell_nominal_voltage));
+    setCellNominalVoltageEEPROM(cell_nominal_voltage);
+    break;
+  case CELL_CRITICAL_VOLTAGE:
+    memcpy(&cell_critical_voltage, receive_data, sizeof(cell_critical_voltage));
+    setCellCriticalVoltageEEPROM(cell_critical_voltage);
+    break;
+  case TEMPERATURE_RESOLUTION:
+    memcpy(&temperature_resolution, receive_data, sizeof(temperature_resolution));
+    temperature_sensor.setResolution(temperature_resolution);
+    setTempResolutionEEPROM(temperature_resolution);
+    break;
+  case TEMPERATURE_OVERHEAT_WARNING:
+    memcpy(&temperature_overheat_critical, receive_data, sizeof(temperature_overheat_critical));
+    setTempOverheatWarningEEPROM(temperature_overheat_critical);
+    break;
+  case TEMPERATURE_OVERHEAT_CRITICAL:
+    memcpy(&temperature_overheat_warning, receive_data, sizeof(temperature_overheat_warning));
+    setTempOverheatCriticalEEPROM(temperature_overheat_warning);
+    break;
+  case TEMPERATURE_UNDERHEAT_WARNING:
+    memcpy(&temperature_underheat_warning, receive_data, sizeof(temperature_underheat_warning));
+    setTempUnderheatWarningEEPROM(temperature_underheat_warning);
+    break;
+  case TEMPERATURE_UNDERHEAT_CRITICAL:
+    memcpy(&temperature_underheat_critical, receive_data, sizeof(temperature_underheat_critical));
+    setTempUnderheatCriticalEEPROM(temperature_underheat_critical);
+    break;
+  case CURRENT_WARNING:
+    memcpy(&current_warning, receive_data, sizeof(current_warning));
+    setCurrentWarningEEPROM(current_warning);
+    break;
+  case CURRENT_CRITICAL:
+    memcpy(&current_critical, receive_data, sizeof(current_critical));
+    setCurrentCriticalEEPROM(current_critical);
+    break;
+  case REQUEST_TYPE:
+    memcpy(&request_type, receive_data, sizeof(request_type));
+    break;
   }
 }
 
@@ -607,6 +606,9 @@ void requestEvent()
   {
     float current_critical = getCurrentCriticalEEPROM();
     sendData(&current_critical, sizeof(current_critical));
+  }
+  else if(request_type == CELL_COUNT) {
+    sendData(&num_cells, sizeof(num_cells));
   }
 }
 
