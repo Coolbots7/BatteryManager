@@ -636,6 +636,9 @@ void requestEvent()
   {
     sendData(&led_brightness, sizeof(led_brightness));
   }
+  else if(request_type == REFRESH_RATE) {
+    sendData(&refresh_rate, sizeof(refresh_rate));
+  }
 }
 
 //Function to send bytes to I2C master

@@ -101,6 +101,7 @@ class BatteryManager
     float getCurrentWarning();
     float getCurrentCritical();
     uint8_t getLEDBrightness();
+    uint8_t getRefreshRate();
 
     void setCellChargedVoltage(float);
     void setCellNominalVoltage(float);

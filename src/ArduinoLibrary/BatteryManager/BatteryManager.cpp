@@ -146,6 +146,10 @@ uint8_t BatteryManager::getLEDBrightness()
 {
   return getByte(LED_BRIGHTNESS);
 }
+uint8_t BatteryManager::getRefreshRate()
+{
+  return getByte(REFRESH_RATE);
+}
 
 // ============ Set EEPROM Settings ============
 void BatteryManager::setCellChargedVoltage(float voltage)
