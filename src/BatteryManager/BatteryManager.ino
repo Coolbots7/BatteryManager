@@ -12,9 +12,6 @@
 //TODO allow address selection
 #define WIRE_ID 8
 
-//TODO autodetect number of cells
-#define NUM_CELLS 3
-
 #define LED_ONE_WIRE_PIN 6
 
 #define TEMP_ONE_WIRE_PIN 2
@@ -127,6 +124,8 @@ enum BatteryStatus
 
 Adafruit_INA219 ina219;
 
+uint8_t num_cells;
+
 float cell_charged_voltage;
 float cell_nominal_voltage;
 float cell_critical_voltage;
@@ -191,7 +190,8 @@ void setup()
         delay(100);
       }
     }
-    else {
+    else
+    {
       //Pin is low, EEPROM flash canceled
       //Indicate EEPROM flash is canceled
       for (int i = 0; i < 3; i++)
@@ -205,10 +205,6 @@ void setup()
       }
     }
   }
-
-  Wire.begin(WIRE_ID);
-  Wire.onRequest(requestEvent);
-  Wire.onReceive(receiveEvent);
 
   temperature_resolution = getTempResolutionEEPROM();
   temperature_overheat_critical = getTempOverheatCriticalEEPROM();
@@ -233,6 +229,21 @@ void setup()
   ads_0.setGain(ADC_GAIN);
 
   ina219.begin();
+
+  //Detect the number of cells
+  num_cells = 0;
+  for(int i=3;i>0; i--) {
+    float voltage = GetCellVoltage(i);
+    if(voltage >= 2.0f) {
+      num_cells = i+1;
+      break;
+    }
+  }
+  Serial.print(num_cells); Serial.println(" cells detected.");
+
+  Wire.begin(WIRE_ID);
+  Wire.onRequest(requestEvent);
+  Wire.onReceive(receiveEvent);
 
   Serial.println("Settings loaded from EEPROM:");
   Serial.print("Cell Charged (V): ");
@@ -274,7 +285,7 @@ void loop()
 
     battery = updateBattery();
 
-    //    for (int i = 0; i < NUM_CELLS; i++)
+    //    for (int i = 0; i < num_cells; i++)
     //    {
     //      Serial.print("Cell ");
     //      Serial.print(i);
@@ -303,12 +314,12 @@ Battery updateBattery()
   Battery battery;
 
   //BUG when battery is disconnected cell 0 voltage is approx 0v but cell 1 voltge is ~18v, this causes both cell over and under voltage errors
-  for (int i = 0; i < NUM_CELLS; i++)
+  for (int i = 0; i < num_cells; i++)
   {
     battery.cell_voltages[i] = GetCellVoltage(i);
   }
 
-  //battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
+  //battery.voltage = GetBankVoltageAtIndex(num_cells - 1);
   //another option: use ina219 to calcuate load voltage
   battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
   battery.current = ina219.getCurrent_mA();
@@ -317,7 +328,7 @@ Battery updateBattery()
   battery.temperature = temperature_sensor.getTempCByIndex(0);
 
   battery.errors = 0x00;
-  for (int i = 0; i < NUM_CELLS; i++)
+  for (int i = 0; i < num_cells; i++)
   {
     if (battery.cell_voltages[i] >= cell_charged_voltage)
     {
