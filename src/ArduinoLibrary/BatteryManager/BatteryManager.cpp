@@ -192,6 +192,10 @@ void BatteryManager::setLEDBrightness(uint8_t brightness)
 {
   sendData(LED_BRIGHTNESS, &brightness, sizeof(brightness));
 }
+void BatteryManager::setRefreshRate(uint8_t refresh_rate)
+{
+  sendData(REFRESH_RATE, &refresh_rate, sizeof(refresh_rate));
+}
 
 void BatteryManager::getData(MessageType message_type, void *destination, uint8_t num_bytes)
 {

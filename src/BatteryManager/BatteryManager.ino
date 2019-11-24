@@ -76,6 +76,7 @@ enum MessageType
   CURRENT_CRITICAL = 0x0A,
   REQUEST_TYPE = 0x0B,
   LED_BRIGHTNESS = 0x0C,
+  REFRESH_RATE = 0x0D,
   //Constants to represent the intended value being requested from the battery manager
   CELL_0_VOLTAGE = 0x81,
   CELL_1_VOLTAGE = 0x82,
@@ -518,6 +519,10 @@ void receiveEvent(int num_bytes)
     memcpy(&led_brightness, receive_data, sizeof(led_brightness));
     setLEDBrightnessEEPROM(led_brightness);
     break;
+  case REFRESH_RATE:
+    memcpy(&refresh_rate, receive_data, sizeof(refresh_rate));
+    setRefreshRateEEPROM(refresh_rate);
+    break;
   }
 }
 
@@ -776,10 +781,12 @@ uint8_t getLEDBrightnessEEPROM()
 }
 
 //Refresh rate
-void setRefreshRateEEPROM(uint8_t rate) {
+void setRefreshRateEEPROM(uint8_t rate)
+{
   EEPROM.put(REFRESH_RATE_EEPROM_ADDR, rate);
 }
-uint8_t getRefreshRateEEPROM() {
+uint8_t getRefreshRateEEPROM()
+{
   uint8_t rate = 0;
   EEPROM.get(REFRESH_RATE_EEPROM_ADDR, rate);
   return rate;
