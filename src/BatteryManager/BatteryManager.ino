@@ -32,11 +32,9 @@
 #define TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR 25 //25-28
 #define CURRENT_WARNING_EERPOM_ADDR 29         //29-32
 #define CURRENT_CRITICAL_EEPROM_ADDR 33        //33-36
+#define LED_BRIGHTNESS_EEPROM_ADDR 37          //37
 
 Adafruit_NeoPixel status_LED(1, LED_ONE_WIRE_PIN, NEO_GRB);
-//TODO move led brightness to EEPROM
-//TODO allow change LED brightness
-#define STATUS_LED_BRIGHTNESS 70
 
 OneWire oneWire(TEMP_ONE_WIRE_PIN);
 DallasTemperature temperature_sensor(&oneWire);
@@ -138,6 +136,8 @@ float temperature_underheat_critical;
 float current_warning;
 float current_critical;
 
+uint8_t led_brightness;
+
 byte request_type = 0x00;
 
 void setup()
@@ -153,7 +153,7 @@ void setup()
     //Wait to confirm EEPROM flash
     for (int i = 0; i < 5; i++)
     {
-      status_LED.fill(status_LED.Color(STATUS_LED_BRIGHTNESS, 0, STATUS_LED_BRIGHTNESS));
+      status_LED.fill(status_LED.Color(70, 0, 70));
       status_LED.show();
       delay(500);
       status_LED.fill(status_LED.Color(0, 0, 0));
@@ -178,10 +178,12 @@ void setup()
       setCurrentWarningEEPROM(25000);
       setCurrentCriticalEEPROM(32000);
 
+      setLEDBrightnessEEPROM(70);
+
       //Indicate EEPROM flash is complete
       for (int i = 0; i < 3; i++)
       {
-        status_LED.fill(status_LED.Color(0, STATUS_LED_BRIGHTNESS, 0));
+        status_LED.fill(status_LED.Color(0, 70, 0));
         status_LED.show();
         delay(100);
         status_LED.fill(status_LED.Color(0, 0, 0));
@@ -195,7 +197,7 @@ void setup()
       //Indicate EEPROM flash is canceled
       for (int i = 0; i < 3; i++)
       {
-        status_LED.fill(status_LED.Color(STATUS_LED_BRIGHTNESS, 0, 0));
+        status_LED.fill(status_LED.Color(70, 0, 0));
         status_LED.show();
         delay(100);
         status_LED.fill(status_LED.Color(0, 0, 0));
@@ -217,6 +219,8 @@ void setup()
   cell_charged_voltage = getCellChargedVoltageEEPROM();
   cell_nominal_voltage = getCellNominalVoltageEEPROM();
   cell_critical_voltage = getCellCriticalVoltageEEPROM();
+
+  led_brightness = getLEDBrightnessEEPROM();
 
   temperature_sensor.begin();
   temperature_sensor.setResolution(temperature_resolution);
@@ -393,15 +397,15 @@ Battery updateBattery()
 
   if (battery.status == OK)
   {
-    status_LED.fill(status_LED.Color(0, STATUS_LED_BRIGHTNESS, 0));
+    status_LED.fill(status_LED.Color(0, led_brightness, 0));
   }
   else if (battery.status == WARNING)
   {
-    status_LED.fill(status_LED.Color(STATUS_LED_BRIGHTNESS, STATUS_LED_BRIGHTNESS, 0));
+    status_LED.fill(status_LED.Color(led_brightness, led_brightness, 0));
   }
   else if (battery.status == CRITICAL)
   {
-    status_LED.fill(status_LED.Color(STATUS_LED_BRIGHTNESS, 0, 0));
+    status_LED.fill(status_LED.Color(led_brightness, 0, 0));
   }
   status_LED.show();
 
@@ -740,4 +744,14 @@ float getCurrentCriticalEEPROM()
   float threshold = 0.0f;
   EEPROM.get(CURRENT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;
+}
+
+//LED brightness
+void setLEDBrightnessEEPROM(uint8_t brightness) {
+  EEPROM.put(LED_BRIGHTNESS_EEPROM_ADDR, brightness);
+}
+uint8_t getLEDBrightnessEEPROM() {
+  uint8_t brightness = 0;
+  EEPROM.get(LED_BRIGHTNESS_EEPROM_ADDR, brightness);
+  return brightness;
 }
