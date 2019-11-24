@@ -6,101 +6,121 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+//TODO allow change update rate
 #define RATE 1
 
+//TODO allow address selection
 #define WIRE_ID 8
 
-//TODO move num cells to EEPROM
 //TODO autodetect number of cells
-#define NUM_CELLS 2
+#define NUM_CELLS 3
 
 #define LED_ONE_WIRE_PIN 6
 
 #define TEMP_ONE_WIRE_PIN 2
 
-#define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0 //0-3
-#define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4 //4-7
-#define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8 //8-11
-#define TEMP_RESOLUTION_EEPROM_ADDR 12 //12
-#define TEMP_OVERHEAT_WARNING_EEPROM_ADDR 13 //13-16
-#define TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR 17 //17-20
-#define TEMP_UNDERHEAT_WARNING_EEPROM_ADDR 21 //21-24
+//Address of the ADC for cells 0-3
+#define ADC_0_ADDR 0x48
+
+#define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0     //0-3
+#define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4     //4-7
+#define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8    //8-11
+#define TEMP_RESOLUTION_EEPROM_ADDR 12         //12
+#define TEMP_OVERHEAT_WARNING_EEPROM_ADDR 13   //13-16
+#define TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR 17  //17-20
+#define TEMP_UNDERHEAT_WARNING_EEPROM_ADDR 21  //21-24
 #define TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR 25 //25-28
-#define CURRENT_WARNING_EERPOM_ADDR 29 //29-32
-#define CURRENT_CRITICAL_EEPROM_ADDR 33 //33-36
+#define CURRENT_WARNING_EERPOM_ADDR 29         //29-32
+#define CURRENT_CRITICAL_EEPROM_ADDR 33        //33-36
 
 Adafruit_NeoPixel statusLED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 //TODO move led brightness to EEPROM
+//TODO allow change LED brightness
 #define STATUS_LED_BRIGHTNESS 70
 
 OneWire oneWire(TEMP_ONE_WIRE_PIN);
 DallasTemperature tempSensor(&oneWire);
 
 #define ADC_GAIN GAIN_TWOTHIRDS
-#define ADC_0_ADDR 0x48
 Adafruit_ADS1115 ads0(ADC_0_ADDR);
 const float VOLTAGE_DIVIDER_R1[] = {
-  0.0f,
-  1.764f,
-  1.468f,
-  6.650f
-};
-
+    0.0f,
+    1.764f,
+    1.468f,
+    6.650f};
 const float VOLTAGE_DIVIDER_R2[] = {
-  1.0f,
-  3.290f,
-  0.985f,
-  3.270f
-};
+    1.0f,
+    3.290f,
+    0.985f,
+    3.270f};
 
-#define CELL_CHARGED_VOLTAGE_REGISTER 0x01
-#define CELL_NOMINAL_VOLTAGE_REGISTER 0x02
-#define CELL_CRITICAL_VOLTAGE_REGISTER 0x03
-#define TEMP_RESOLUTION_REGISTER 0x04
-#define TEMP_OVERHEAT_WARNING_REGISTER 0x05
-#define TEMP_OVERHEAT_CRITICAL_REGISTER 0x06
-#define TEMP_UNDERHEAT_WARNING_REGISTER 0x07
-#define TEMP_UNDERHEAT_CRITICAL_REGISTER 0x08
-#define CURRENT_WARNING_REGISTER 0x09
-#define CURRENT_CRITICAL_REGISTER 0x0A
-
-#define CELL_0_VOLTAGE_REGISTER       0x10
-#define CELL_1_VOLTAGE_REGISTER       0x20
-#define CELL_2_VOLTAGE_REGISTER       0x30
-#define CELL_3_VOLTAGE_REGISTER       0x40
-#define CELL_4_VOLTAGE_REGISTER       0x50
-#define CELL_5_VOLTAGE_REGISTER       0x60
-#define CELL_6_VOLTAGE_REGISTER       0x70
-#define CELL_7_VOLTAGE_REGISTER       0x80
-#define BATTERY_VOLTAGE_REGISTER      0x90
-#define BATTERY_CURRENT_REGISTER      0xA0
-#define BATTERY_POWER_REGISTER        0xB0
-#define BATTERY_TEMPERATURE_REGISTER  0xC0
-#define BATTERY_ERROR_REGISTER        0xD0
-#define BATTERY_STATUS_REGISTER       0xE0
-
-Adafruit_INA219 ina219;
-
-struct Battery {
-  float cellVoltages[NUM_CELLS];
+struct Battery
+{
+  float cell_voltages[4];
   float voltage;
   float current;
   float power;
   float temperature;
   uint16_t errors;
-  byte status;
+  uint8_t status;
 };
 
-#define ERROR_CELL_OVERVOLTAGE      0x0001
-#define ERROR_CELL_LOW              0x0002
-#define ERROR_CELL_CRITICAL         0x0004
-#define ERROR_OVER_TEMP_WARNING     0x0008
-#define ERROR_OVER_TEMP_CRITICAL    0x0010
-#define ERROR_UNDER_TEMP_WARNING    0x0020
-#define ERROR_UNDER_TEMP_CRITICAL   0x0040
-#define ERROR_CURRENT_WARNING       0x0080
-#define ERROR_CURRENT_CIRITCAL      0x0100
-//IDEA battery disconected error
+enum MessageType
+{
+//Constants to represent the intent of the value being sent to the battery manager
+  CELL_CHARGED_VOLTAGE = 0x01,
+  CELL_NOMINAL_VOLTAGE = 0x02,
+  CELL_CRITICAL_VOLTAGE = 0x03,
+  TEMPERATURE_RESOLUTION = 0x04,
+  TEMPERATURE_OVERHEAT_WARNING = 0x05,
+  TEMPERATURE_OVERHEAT_CRITICAL = 0x06,
+  TEMPERATURE_UNDERHEAT_WARNING = 0x07,
+  TEMPERATURE_UNDERHEAT_CRITICAL = 0x08,
+  CURRENT_WARNING = 0x09,
+  CURRENT_CRITICAL = 0x0A,
+  REQUEST_TYPE = 0x0B,
+  //Constants to represent the intended value being requested from the battery manager
+  CELL_0_VOLTAGE = 0x81,
+  CELL_1_VOLTAGE = 0x82,
+  CELL_2_VOLTAGE = 0x83,
+  CELL_3_VOLTAGE = 0x84,
+  BATTERY_VOLTAGE = 0x85,
+  BATTERY_CURRENT = 0x86,
+  BATTERY_POWER = 0x87,
+  BATTERY_TEMPERATURE = 0x88,
+  BATTERY_ERROR = 0x89,
+  BATTERY_STATUS = 0x8A
+};
+
+struct MessageHeader
+{
+  MessageType message_type;
+};
+
+//Constant bit flags used to represent battery errors
+enum BatteryError
+{
+  CELL_OVERVOLTAGE_FLAG = 0x01,
+  CELL_LOW_FLAG = 0x02,
+  CELL_CRITICAL_FLAG = 0x04,
+  TEMPERATURE_OVERHEAT_WARNING_FLAG = 0x08,
+  TEMPERATURE_OVERHEAT_CRITICAL_FLAG = 0x10,
+  TEMPERATURE_UNDERHEAT_WARNING_FLAG = 0x20,
+  TEMPERATURE_UNDERHEAT_CRITICAL_FLAG = 0x40,
+  CURRENT_WARNING_FLAG = 0x80,
+  CURRENT_CRITICAL_FLAG = 0x100
+  //IDEA battery disconected error
+};
+
+//Constant values to represent the current status of the battery
+enum BatteryStatus
+{
+  OK = 0x00,
+  WARNING = 0x01,
+  CRITICAL = 0x02
+};
+
+Adafruit_INA219 ina219;
 
 float cellChargedVoltage;
 float cellNominalVoltage;
@@ -115,14 +135,15 @@ float tempUnderheatCriticalThreshold;
 float currentWarningThreshold;
 float currentCriticalThreshold;
 
-byte wireRegister = CELL_0_VOLTAGE_REGISTER;
+byte request_type = 0x00;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   Wire.begin(WIRE_ID);
-  Wire.onRequest(wireRequest);
-  Wire.onReceive(wireReceive);
+  Wire.onRequest(requestEvent);
+  Wire.onReceive(receiveEvent);
 
   tempResolution = getTempResolutionEEPROM();
   tempOverheatCriticalThreshold = getTempOverheatCriticalEEPROM();
@@ -132,6 +153,10 @@ void setup() {
 
   currentWarningThreshold = getCurrentWarningEEPROM();
   currentCriticalThreshold = getCurrentCriticalEEPROM();
+
+  cellChargedVoltage = getCellChargedVoltageEEPROM();
+  cellNominalVoltage = getCellNominalVoltageEEPROM();
+  cellCriticalVoltage = getCellCriticalVoltageEEPROM();
 
   tempSensor.begin();
   tempSensor.setResolution(tempResolution);
@@ -146,21 +171,27 @@ void setup() {
 
   statusLED.begin();
 
-  cellChargedVoltage = getCellChargedVoltageEEPROM();
-  cellNominalVoltage = getCellNominalVoltageEEPROM();
-  cellCriticalVoltage = getCellCriticalVoltageEEPROM();
-
   Serial.println("Settings loaded from EEPROM:");
-  Serial.print("Cell Charged (V): "); Serial.println(cellChargedVoltage);
-  Serial.print("Cell Nominal (V): "); Serial.println(cellNominalVoltage);
-  Serial.print("Cell Critical (V): "); Serial.println(cellCriticalVoltage);
-  Serial.print("Temp Resolution: "); Serial.println(tempResolution);
-  Serial.print("Temp Overheat Warn (C): "); Serial.println(tempOverheatWarningThreshold);
-  Serial.print("Temp Overheat Crit (C): "); Serial.println(tempOverheatCriticalThreshold);
-  Serial.print("Temp Underheat Warn (C): "); Serial.println(tempUnderheatWarningThreshold);
-  Serial.print("Temp Underheat Crit (C): "); Serial.println(tempUnderheatCriticalThreshold);
-  Serial.print("Current Warn (mA): "); Serial.println(currentWarningThreshold);
-  Serial.print("Current Crit (mA): "); Serial.println(currentCriticalThreshold);
+  Serial.print("Cell Charged (V): ");
+  Serial.println(cellChargedVoltage);
+  Serial.print("Cell Nominal (V): ");
+  Serial.println(cellNominalVoltage);
+  Serial.print("Cell Critical (V): ");
+  Serial.println(cellCriticalVoltage);
+  Serial.print("Temp Resolution: ");
+  Serial.println(tempResolution);
+  Serial.print("Temp Overheat Warn (C): ");
+  Serial.println(tempOverheatWarningThreshold);
+  Serial.print("Temp Overheat Crit (C): ");
+  Serial.println(tempOverheatCriticalThreshold);
+  Serial.print("Temp Underheat Warn (C): ");
+  Serial.println(tempUnderheatWarningThreshold);
+  Serial.print("Temp Underheat Crit (C): ");
+  Serial.println(tempUnderheatCriticalThreshold);
+  Serial.print("Current Warn (mA): ");
+  Serial.println(currentWarningThreshold);
+  Serial.print("Current Crit (mA): ");
+  Serial.println(currentCriticalThreshold);
   Serial.println();
 
   delay(2000);
@@ -168,306 +199,135 @@ void setup() {
 
 Battery battery;
 unsigned long prevPollTime = millis();
-void loop() {
+void loop()
+{
   //Update temperature sensors
   if (tempSensor.isConversionComplete())
     tempSensor.requestTemperatures();
 
-  if ((millis() - prevPollTime) > (1000 / RATE)) {
+  if ((millis() - prevPollTime) > (1000 / RATE))
+  {
     prevPollTime = millis();
 
     battery = updateBattery();
 
-    //    for (int i = 0; i < NUM_CELLS; i++) {
-    //      Serial.print("Cell "); Serial.print(i); Serial.print(" Voltage: " );
-    //      Serial.println(battery.cellVoltages[i], 4);
-    //    }
-    //
-    //    Serial.print("Battery Voltage: ");
-    //    Serial.println(battery.voltage, 4);
-    //    Serial.print("Current (mA): ");
-    //    Serial.println(battery.current, 4);
-    //    Serial.print("Power (mW): ");
-    //    Serial.println(battery.power, 4);
-    //    Serial.print("Temperature (C): ");
-    //    Serial.println(battery.temperature, 4);
-    //    Serial.print("Errors: "); Serial.println(battery.errors, BIN);
-    //    Serial.print("Status: ");
-    //    Serial.println(battery.status);
-    //    Serial.println();
-  }
-
-}
-
-byte floatBuffer[sizeof(float)];
-byte uint16Buffer[sizeof(uint16_t)];
-void wireRequest() {
-
-  if (wireRegister == CELL_0_VOLTAGE_REGISTER) {
-    float cell0Voltage = battery.cellVoltages[0];
-    memcpy(floatBuffer, &cell0Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_1_VOLTAGE_REGISTER) {
-    float cell1Voltage = battery.cellVoltages[1];
-    memcpy(floatBuffer, &cell1Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_2_VOLTAGE_REGISTER) {
-    float cell2Voltage = battery.cellVoltages[2];
-    memcpy(floatBuffer, &cell2Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_3_VOLTAGE_REGISTER) {
-    float cell3Voltage = battery.cellVoltages[3];
-    memcpy(floatBuffer, &cell3Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_4_VOLTAGE_REGISTER) {
-    float cell4Voltage = battery.cellVoltages[4];
-    memcpy(floatBuffer, &cell4Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_5_VOLTAGE_REGISTER) {
-    float cell5Voltage = battery.cellVoltages[5];
-    memcpy(floatBuffer, &cell5Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_6_VOLTAGE_REGISTER) {
-    float cell6Voltage = battery.cellVoltages[6];
-    memcpy(floatBuffer, &cell6Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_7_VOLTAGE_REGISTER) {
-    float cell7Voltage = battery.cellVoltages[7];
-    memcpy(floatBuffer, &cell7Voltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == BATTERY_VOLTAGE_REGISTER) {
-    float batteryVoltage = battery.voltage;
-    memcpy(floatBuffer, &batteryVoltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == BATTERY_CURRENT_REGISTER) {
-    float batteryCurrent = battery.current;
-    memcpy(floatBuffer, &batteryCurrent, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == BATTERY_POWER_REGISTER) {
-    float batteryPower = battery.power;
-    memcpy(floatBuffer, &batteryPower, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == BATTERY_TEMPERATURE_REGISTER) {
-    float batteryTemperature = battery.temperature;
-    memcpy(floatBuffer, &batteryTemperature, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == BATTERY_ERROR_REGISTER) {
-    uint16_t batteryErrors = battery.errors;
-    memcpy(uint16Buffer, &batteryErrors, sizeof(uint16Buffer));
-    Wire.write(uint16Buffer, sizeof(uint16Buffer));
-  }
-  else if (wireRegister == BATTERY_STATUS_REGISTER) {
-    byte batteryStatus = battery.status;
-    Wire.write(batteryStatus);
-  }
-  else if (wireRegister == CELL_CHARGED_VOLTAGE_REGISTER) {
-    float cellChargedVoltage = getCellChargedVoltageEEPROM();
-    memcpy(floatBuffer, &cellChargedVoltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_NOMINAL_VOLTAGE_REGISTER) {
-    float cellNominalVoltage = getCellNominalVoltageEEPROM();
-    memcpy(floatBuffer, &cellNominalVoltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CELL_CRITICAL_VOLTAGE_REGISTER) {
-    float cellCriticalVoltage = getCellCriticalVoltageEEPROM();
-    memcpy(floatBuffer, &cellCriticalVoltage, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == TEMP_RESOLUTION_REGISTER) {
-    byte tempResolution = getTempResolutionEEPROM();
-    Wire.write(tempResolution);
-  }
-  else if (wireRegister == TEMP_OVERHEAT_WARNING_REGISTER) {
-    float tempOverheatWarning = getTempOverheatWarningEEPROM();
-    memcpy(floatBuffer, &tempOverheatWarning, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == TEMP_OVERHEAT_CRITICAL_REGISTER) {
-    float tempOverheatCritical = getTempOverheatCriticalEEPROM();
-    memcpy(floatBuffer, &tempOverheatCritical, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == TEMP_UNDERHEAT_WARNING_REGISTER) {
-    float tempUnderheatWarning = getTempUnderheatWarningEEPROM();
-    memcpy(floatBuffer, &tempUnderheatWarning, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == TEMP_UNDERHEAT_CRITICAL_REGISTER) {
-    float tempUnderheatCritical = getTempUnderheatCriticalEEPROM();
-    memcpy(floatBuffer, &tempUnderheatCritical, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CURRENT_WARNING_REGISTER) {
-    float currentWarning = getCurrentWarningEEPROM();
-    memcpy(floatBuffer, &currentWarning, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  else if (wireRegister == CURRENT_CRITICAL_REGISTER) {
-    float currentCritical = getCurrentCriticalEEPROM();
-    memcpy(floatBuffer, &currentCritical, sizeof(floatBuffer));
-    Wire.write(floatBuffer, sizeof(floatBuffer));
-  }
-  
-}
-
-void wireReceive(int numBytes) {
-  if (numBytes == 1) {
-    wireRegister = Wire.read();
-  }
-  else if (numBytes == 2) {
-    wireRegister = Wire.read();
-
-    byte val = Wire.read();
-
-    switch (wireRegister) {
-      case TEMP_RESOLUTION_REGISTER:
-        setTempResolutionEEPROM(val);
-        break;
-      default:
-        break;
-    }
-  }
-  else if (numBytes == 5) {
-    wireRegister = Wire.read();
-
-    for (int i = 0; i < numBytes - 1; i++) {
-      floatBuffer[i] = Wire.read();
-    }
-
-    float val;
-    memcpy(&val, floatBuffer, sizeof(val));
-
-    switch (wireRegister) {
-      case CELL_CHARGED_VOLTAGE_REGISTER:
-        setCellChargedVoltageEEPROM(val);
-        break;
-      case CELL_NOMINAL_VOLTAGE_REGISTER:
-        setCellNominalVoltageEEPROM(val);
-        break;
-      case CELL_CRITICAL_VOLTAGE_REGISTER:
-        setCellCriticalVoltageEEPROM(val);
-        break;
-      case TEMP_OVERHEAT_WARNING_REGISTER:
-        setTempOverheatWarningEEPROM(val);
-        break;
-      case TEMP_OVERHEAT_CRITICAL_REGISTER:
-        setTempOverheatCriticalEEPROM(val);
-        break;
-      case TEMP_UNDERHEAT_WARNING_REGISTER:
-        setTempUnderheatWarningEEPROM(val);
-        break;
-      case TEMP_UNDERHEAT_CRITICAL_REGISTER:
-        setTempUnderheatCriticalEEPROM(val);
-        break;
-      case CURRENT_WARNING_REGISTER:
-        setCurrentWarningEEPROM(val);
-        break;
-      case CURRENT_CRITICAL_REGISTER:
-        setCurrentCriticalEEPROM(val);
-        break;
-      default:
-        break;
-    }
+//    for (int i = 0; i < NUM_CELLS; i++)
+//    {
+//      Serial.print("Cell ");
+//      Serial.print(i);
+//      Serial.print(" Voltage: ");
+//      Serial.println(battery.cell_voltages[i], 4);
+//    }
+//
+//    Serial.print("Battery Voltage: ");
+//    Serial.println(battery.voltage, 4);
+//    Serial.print("Current (mA): ");
+//    Serial.println(battery.current, 4);
+//    Serial.print("Power (mW): ");
+//    Serial.println(battery.power, 4);
+//    Serial.print("Temperature (C): ");
+//    Serial.println(battery.temperature, 4);
+//    Serial.print("Errors: ");
+//    Serial.println(battery.errors, BIN);
+//    Serial.print("Status: ");
+//    Serial.println(battery.status);
+//    Serial.println();
   }
 }
 
-Battery updateBattery() {
+Battery updateBattery()
+{
   Battery battery;
 
   //BUG when battery is disconnected cell 0 voltage is approx 0v but cell 1 voltge is ~18v, this causes both cell over and under voltage errors
-  for (int i = 0; i < NUM_CELLS; i++) {
-    battery.cellVoltages[i] = GetCellVoltage(i);
+  for (int i = 0; i < NUM_CELLS; i++)
+  {
+    battery.cell_voltages[i] = GetCellVoltage(i);
   }
 
-  battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
+  //battery.voltage = GetBankVoltageAtIndex(NUM_CELLS - 1);
   //another option: use ina219 to calcuate load voltage
-  //battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
-
+  battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
   battery.current = ina219.getCurrent_mA();
   battery.power = ina219.getPower_mW();
+
   battery.temperature = tempSensor.getTempCByIndex(0);
 
-  battery.errors = 0;
-  for (int i = 0; i < NUM_CELLS; i++) {
-    if (battery.cellVoltages[i] >= cellChargedVoltage) {
-      battery.errors |= ERROR_CELL_OVERVOLTAGE;
+  battery.errors = 0x00;
+  for (int i = 0; i < NUM_CELLS; i++)
+  {
+    if (battery.cell_voltages[i] >= cellChargedVoltage)
+    {
+      battery.errors |= CELL_OVERVOLTAGE_FLAG;
     }
 
-    if (battery.cellVoltages[i] <= cellCriticalVoltage) {
-      battery.errors |= ERROR_CELL_CRITICAL;
+    if (battery.cell_voltages[i] <= cellCriticalVoltage)
+    {
+      battery.errors |= CELL_CRITICAL_FLAG;
     }
-    else if (battery.cellVoltages[i] <= cellNominalVoltage) {
-      battery.errors |= ERROR_CELL_LOW;
+    else if (battery.cell_voltages[i] <= cellNominalVoltage)
+    {
+      battery.errors |= CELL_LOW_FLAG;
     }
   }
 
-
-  if (battery.temperature <= tempUnderheatCriticalThreshold) {
-    battery.errors |= ERROR_UNDER_TEMP_CRITICAL;
+  if (battery.temperature <= tempUnderheatCriticalThreshold)
+  {
+    battery.errors |= TEMPERATURE_UNDERHEAT_CRITICAL_FLAG;
   }
-  else if (battery.temperature  <= tempUnderheatWarningThreshold) {
-    battery.errors |= ERROR_UNDER_TEMP_WARNING;
-  }
-
-
-  if (battery.temperature >= tempOverheatCriticalThreshold) {
-    battery.errors |= ERROR_OVER_TEMP_CRITICAL;
-  }
-  else if (battery.temperature >= tempOverheatWarningThreshold) {
-    battery.errors |= ERROR_OVER_TEMP_WARNING;
+  else if (battery.temperature <= tempUnderheatWarningThreshold)
+  {
+    battery.errors |= TEMPERATURE_UNDERHEAT_WARNING_FLAG;
   }
 
-
-  if (battery.current >= currentCriticalThreshold) {
-    battery.errors |= ERROR_CURRENT_CIRITCAL;
+  if (battery.temperature >= tempOverheatCriticalThreshold)
+  {
+    battery.errors |= TEMPERATURE_OVERHEAT_CRITICAL_FLAG;
   }
-  else if (battery.current >= currentWarningThreshold) {
-    battery.errors |= ERROR_CURRENT_WARNING;
+  else if (battery.temperature >= tempOverheatWarningThreshold)
+  {
+    battery.errors |= TEMPERATURE_OVERHEAT_WARNING_FLAG;
   }
 
+  if (battery.current >= currentCriticalThreshold)
+  {
+    battery.errors |= CURRENT_CRITICAL_FLAG;
+  }
+  else if (battery.current >= currentWarningThreshold)
+  {
+    battery.errors |= CURRENT_WARNING_FLAG;
+  }
 
-  battery.status = 0;
+  battery.status = OK;
   if (
-    battery.errors & ERROR_CELL_OVERVOLTAGE ||
-    battery.errors & ERROR_CELL_LOW ||
-    battery.errors & ERROR_UNDER_TEMP_WARNING ||
-    battery.errors & ERROR_OVER_TEMP_WARNING ||
-    battery.errors & ERROR_CURRENT_WARNING
-  ) {
-    battery.status = 1;
+      battery.errors & CELL_OVERVOLTAGE_FLAG ||
+      battery.errors & CELL_LOW_FLAG ||
+      battery.errors & TEMPERATURE_UNDERHEAT_WARNING_FLAG ||
+      battery.errors & TEMPERATURE_OVERHEAT_WARNING_FLAG ||
+      battery.errors & CURRENT_WARNING_FLAG)
+  {
+    battery.status = WARNING;
   }
 
   if (
-    battery.errors & ERROR_CELL_CRITICAL ||
-    battery.errors & ERROR_UNDER_TEMP_CRITICAL ||
-    battery.errors & ERROR_OVER_TEMP_CRITICAL ||
-    battery.errors & ERROR_CURRENT_CIRITCAL
-  ) {
-    battery.status = 2;
+      battery.errors & CELL_CRITICAL_FLAG ||
+      battery.errors & TEMPERATURE_UNDERHEAT_CRITICAL_FLAG ||
+      battery.errors & TEMPERATURE_OVERHEAT_CRITICAL_FLAG ||
+      battery.errors & CURRENT_CRITICAL_FLAG)
+  {
+    battery.status = CRITICAL;
   }
 
-
-  if (battery.status == 0) {
+  if (battery.status == OK)
+  {
     statusLED.fill(statusLED.Color(0, STATUS_LED_BRIGHTNESS, 0));
   }
-  else if (battery.status == 1) {
+  else if (battery.status == WARNING)
+  {
     statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, STATUS_LED_BRIGHTNESS, 0));
   }
-  else if (battery.status == 2) {
+  else if (battery.status == CRITICAL)
+  {
     statusLED.fill(statusLED.Color(STATUS_LED_BRIGHTNESS, 0, 0));
   }
   statusLED.show();
@@ -475,125 +335,332 @@ Battery updateBattery() {
   return battery;
 }
 
-double GetCellVoltage(uint8_t Index) {
+double GetCellVoltage(uint8_t Index)
+{
   double CellVoltage = 0;
-  if (Index == 0) {
+  if (Index == 0)
+  {
     return GetBankVoltageAtIndex(Index);
   }
-  else {
+  else
+  {
     return (GetBankVoltageAtIndex(Index) - GetBankVoltageAtIndex(Index - 1));
   }
   return -1;
 }
 
-float GetBankVoltageAtIndex(uint8_t Index) {
+float GetBankVoltageAtIndex(uint8_t Index)
+{
   uint16_t analogValue = 0;
-  if (Index >= 0 && Index <= 3) {
+  if (Index >= 0 && Index <= 3)
+  {
     analogValue = ads0.readADC_SingleEnded(Index);
   }
-  else {
+  else
+  {
     return -1;
   }
 
-  return analogValue  * ((0.1875f / 1000.0f) * ((VOLTAGE_DIVIDER_R1[Index] + VOLTAGE_DIVIDER_R2[Index]) / VOLTAGE_DIVIDER_R2[Index]));
+  return analogValue * ((0.1875f / 1000.0f) * ((VOLTAGE_DIVIDER_R1[Index] + VOLTAGE_DIVIDER_R2[Index]) / VOLTAGE_DIVIDER_R2[Index]));
 }
 
-void setCellChargedVoltageEEPROM(float voltage) {
-  EEPROM.put(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
-  cellChargedVoltage = voltage;
+void receiveEvent(int num_bytes)
+{
+  //Read MessageHeader
+  byte header_data[sizeof(MessageHeader)];
+  for (int i = 0; i < sizeof(MessageHeader); i++)
+  {
+    header_data[i] = Wire.read();
+  }
+  MessageHeader header;
+  memcpy(&header, header_data, sizeof(MessageHeader));
+
+  //Read remaining bytes
+  uint8_t receive_bytes = num_bytes - sizeof(MessageHeader);
+  byte receive_data[receive_bytes];
+  for (int i = 0; i < receive_bytes; i++)
+  {
+    receive_data[i] = Wire.read();
+  }
+
+  switch (header.message_type)
+  {
+  case CELL_CHARGED_VOLTAGE:
+    memcpy(&cellChargedVoltage, receive_data, sizeof(cellChargedVoltage));
+    setCellChargedVoltageEEPROM(cellChargedVoltage);
+    break;
+  case CELL_NOMINAL_VOLTAGE:
+    memcpy(&cellNominalVoltage, receive_data, sizeof(cellNominalVoltage));
+    setCellNominalVoltageEEPROM(cellNominalVoltage);
+    break;
+  case CELL_CRITICAL_VOLTAGE:
+    memcpy(&cellCriticalVoltage, receive_data, sizeof(cellCriticalVoltage));
+    setCellCriticalVoltageEEPROM(cellCriticalVoltage);
+    break;
+  case TEMPERATURE_RESOLUTION:
+    memcpy(&tempResolution, receive_data, sizeof(tempResolution));
+    tempSensor.setResolution(tempResolution);
+    setTempResolutionEEPROM(tempResolution);
+    break;
+  case TEMPERATURE_OVERHEAT_WARNING:
+    memcpy(&tempOverheatCriticalThreshold, receive_data, sizeof(tempOverheatCriticalThreshold));
+    setTempOverheatWarningEEPROM(tempOverheatCriticalThreshold);
+    break;
+  case TEMPERATURE_OVERHEAT_CRITICAL:
+    memcpy(&tempOverheatWarningThreshold, receive_data, sizeof(tempOverheatWarningThreshold));
+    setTempOverheatCriticalEEPROM(tempOverheatWarningThreshold);
+    break;
+  case TEMPERATURE_UNDERHEAT_WARNING:
+    memcpy(&tempUnderheatWarningThreshold, receive_data, sizeof(tempUnderheatWarningThreshold));
+    setTempUnderheatWarningEEPROM(tempUnderheatWarningThreshold);
+    break;
+  case TEMPERATURE_UNDERHEAT_CRITICAL:
+    memcpy(&tempUnderheatCriticalThreshold, receive_data, sizeof(tempUnderheatCriticalThreshold));
+    setTempUnderheatCriticalEEPROM(tempUnderheatCriticalThreshold);
+    break;
+  case CURRENT_WARNING:
+    memcpy(&currentWarningThreshold, receive_data, sizeof(currentWarningThreshold));
+    setCurrentWarningEEPROM(currentWarningThreshold);
+    break;
+  case CURRENT_CRITICAL:
+    memcpy(&currentCriticalThreshold, receive_data, sizeof(currentCriticalThreshold));
+    setCurrentCriticalEEPROM(currentCriticalThreshold);
+    break;
+  case REQUEST_TYPE:
+    memcpy(&request_type, receive_data, sizeof(request_type));
+    break;
+  }
 }
-float getCellChargedVoltageEEPROM() {
+
+void requestEvent()
+{
+  if (request_type == CELL_0_VOLTAGE)
+  {
+    float cell0Voltage = battery.cell_voltages[0];
+    sendData(&cell0Voltage, sizeof(cell0Voltage));
+  }
+  else if (request_type == CELL_1_VOLTAGE)
+  {
+    float cell1Voltage = battery.cell_voltages[1];
+    sendData(&cell1Voltage, sizeof(cell1Voltage));
+  }
+  else if (request_type == CELL_2_VOLTAGE)
+  {
+    float cell2Voltage = battery.cell_voltages[2];
+    sendData(&cell2Voltage, sizeof(cell2Voltage));
+  }
+  else if (request_type == CELL_3_VOLTAGE)
+  {
+    float cell3Voltage = battery.cell_voltages[3];
+    sendData(&cell3Voltage, sizeof(cell3Voltage));
+  }
+  else if (request_type == BATTERY_VOLTAGE)
+  {
+    float batteryVoltage = battery.voltage;
+    sendData(&batteryVoltage, sizeof(batteryVoltage));
+  }
+  else if (request_type == BATTERY_CURRENT)
+  {
+    float batteryCurrent = battery.current;
+    sendData(&batteryCurrent, sizeof(batteryCurrent));
+  }
+  else if (request_type == BATTERY_POWER)
+  {
+    float batteryPower = battery.power;
+    sendData(&batteryPower, sizeof(batteryPower));
+  }
+  else if (request_type == BATTERY_TEMPERATURE)
+  {
+    float batteryTemperature = battery.temperature;
+    sendData(&batteryTemperature, sizeof(batteryTemperature));
+  }
+  else if (request_type == BATTERY_ERROR)
+  {
+    uint16_t batteryErrors = battery.errors;
+    sendData(&batteryErrors, sizeof(batteryErrors));
+  }
+  else if (request_type == BATTERY_STATUS)
+  {
+    uint8_t batteryStatus = battery.status;
+    sendData(&batteryStatus, sizeof(batteryStatus));
+  }
+  else if (request_type == CELL_CHARGED_VOLTAGE)
+  {
+    float cellChargedVoltage = getCellChargedVoltageEEPROM();
+    sendData(&cellChargedVoltage, sizeof(cellChargedVoltage));
+  }
+  else if (request_type == CELL_NOMINAL_VOLTAGE)
+  {
+    float cellNominalVoltage = getCellNominalVoltageEEPROM();
+    sendData(&cellNominalVoltage, sizeof(cellNominalVoltage));
+  }
+  else if (request_type == CELL_CRITICAL_VOLTAGE)
+  {
+    float cellCriticalVoltage = getCellCriticalVoltageEEPROM();
+    sendData(&cellCriticalVoltage, sizeof(cellCriticalVoltage));
+  }
+  else if (request_type == TEMPERATURE_RESOLUTION)
+  {
+    uint8_t tempResolution = getTempResolutionEEPROM();
+    sendData(&tempResolution, sizeof(tempResolution));
+  }
+  else if (request_type == TEMPERATURE_OVERHEAT_WARNING)
+  {
+    float tempOverheatWarning = getTempOverheatWarningEEPROM();
+    sendData(&tempOverheatWarning, sizeof(tempOverheatWarning));
+  }
+  else if (request_type == TEMPERATURE_OVERHEAT_CRITICAL)
+  {
+    float tempOverheatCritical = getTempOverheatCriticalEEPROM();
+    sendData(&tempOverheatCritical, sizeof(tempOverheatCritical));
+  }
+  else if (request_type == TEMPERATURE_UNDERHEAT_WARNING)
+  {
+    float tempUnderheatWarning = getTempUnderheatWarningEEPROM();
+    sendData(&tempUnderheatWarning, sizeof(tempUnderheatWarning));
+  }
+  else if (request_type == TEMPERATURE_UNDERHEAT_CRITICAL)
+  {
+    float tempUnderheatCritical = getTempUnderheatCriticalEEPROM();
+    sendData(&tempUnderheatCritical, sizeof(tempUnderheatCritical));
+  }
+  else if (request_type == CURRENT_WARNING)
+  {
+    float currentWarning = getCurrentWarningEEPROM();
+    sendData(&currentWarning, sizeof(currentWarning));
+  }
+  else if (request_type == CURRENT_CRITICAL)
+  {
+    float currentCritical = getCurrentCriticalEEPROM();
+    sendData(&currentCritical, sizeof(currentCritical));
+  }
+}
+
+//Function to send bytes to I2C master
+void sendData(const void *data, uint8_t num_bytes)
+{
+  byte send_data[num_bytes];
+  memcpy(send_data, data, num_bytes);
+  Wire.write(send_data, num_bytes);
+}
+
+// ============ EEPROM Setters & Getters ============
+
+//Cell charged voltage
+void setCellChargedVoltageEEPROM(float voltage)
+{
+  EEPROM.put(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
+}
+float getCellChargedVoltageEEPROM()
+{
   float voltage = 0.00f;
   EEPROM.get(CELL_CHARGED_VOLTAGE_EEPROM_ADDR, voltage);
   return voltage;
 }
 
-void setCellNominalVoltageEEPROM(float voltage) {
+//Cell nominal voltage
+void setCellNominalVoltageEEPROM(float voltage)
+{
   EEPROM.put(CELL_NOMINAL_VOLTAGE_EEPROM_ADDR, voltage);
-  cellNominalVoltage = voltage;
 }
-float getCellNominalVoltageEEPROM() {
+float getCellNominalVoltageEEPROM()
+{
   float voltage = 0.00f;
   EEPROM.get(CELL_NOMINAL_VOLTAGE_EEPROM_ADDR, voltage);
   return voltage;
 }
 
-void setCellCriticalVoltageEEPROM(float voltage) {
+//Cell critical voltage
+void setCellCriticalVoltageEEPROM(float voltage)
+{
   EEPROM.put(CELL_CRITICAL_VOLTAGE_EEPROM_ADDR, voltage);
-  cellCriticalVoltage = voltage;
 }
-float getCellCriticalVoltageEEPROM() {
+float getCellCriticalVoltageEEPROM()
+{
   float voltage = 0.00f;
   EEPROM.get(CELL_CRITICAL_VOLTAGE_EEPROM_ADDR, voltage);
   return voltage;
 }
 
-void setTempResolutionEEPROM(uint8_t resolution) {
+//Temperature resolution
+void setTempResolutionEEPROM(uint8_t resolution)
+{
   EEPROM.put(TEMP_RESOLUTION_EEPROM_ADDR, resolution);
-  tempResolution = resolution;
-  tempSensor.setResolution(resolution);
 }
-uint8_t getTempResolutionEEPROM() {
+uint8_t getTempResolutionEEPROM()
+{
   uint8_t resolution = 0;
   EEPROM.get(TEMP_RESOLUTION_EEPROM_ADDR, resolution);
   return resolution;
 }
 
-void setTempOverheatCriticalEEPROM(float threshold) {
+//Temperature overheat critical
+void setTempOverheatCriticalEEPROM(float threshold)
+{
   EEPROM.put(TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR, threshold);
-  tempOverheatCriticalThreshold = threshold;
 }
-float getTempOverheatCriticalEEPROM() {
+float getTempOverheatCriticalEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(TEMP_OVERHEAT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;
 }
 
-void setTempOverheatWarningEEPROM(float threshold) {
+//Temperature overheat warning
+void setTempOverheatWarningEEPROM(float threshold)
+{
   EEPROM.put(TEMP_OVERHEAT_WARNING_EEPROM_ADDR, threshold);
-  tempOverheatWarningThreshold = threshold;
 }
-float getTempOverheatWarningEEPROM() {
+float getTempOverheatWarningEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(TEMP_OVERHEAT_WARNING_EEPROM_ADDR, threshold);
   return threshold;
 }
 
-void setTempUnderheatCriticalEEPROM(float threshold) {
+//Temperature underheat critical
+void setTempUnderheatCriticalEEPROM(float threshold)
+{
   EEPROM.put(TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR, threshold);
-  tempUnderheatCriticalThreshold = threshold;
 }
-float getTempUnderheatCriticalEEPROM() {
+float getTempUnderheatCriticalEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(TEMP_UNDERHEAT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;
 }
 
-void setTempUnderheatWarningEEPROM(float threshold) {
+//Temperature underheat warning
+void setTempUnderheatWarningEEPROM(float threshold)
+{
   EEPROM.put(TEMP_UNDERHEAT_WARNING_EEPROM_ADDR, threshold);
-  tempUnderheatWarningThreshold = threshold;
 }
-float getTempUnderheatWarningEEPROM() {
+float getTempUnderheatWarningEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(TEMP_UNDERHEAT_WARNING_EEPROM_ADDR, threshold);
   return threshold;
 }
 
-void setCurrentWarningEEPROM(float threshold) {
+//Current warning
+void setCurrentWarningEEPROM(float threshold)
+{
   EEPROM.put(CURRENT_WARNING_EERPOM_ADDR, threshold);
-  currentWarningThreshold = threshold;
 }
-float getCurrentWarningEEPROM() {
+float getCurrentWarningEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(CURRENT_WARNING_EERPOM_ADDR, threshold);
   return threshold;
 }
 
-void setCurrentCriticalEEPROM(float threshold) {
+//Current critical
+void setCurrentCriticalEEPROM(float threshold)
+{
   EEPROM.put(CURRENT_CRITICAL_EEPROM_ADDR, threshold);
-  currentCriticalThreshold = threshold;
 }
-float getCurrentCriticalEEPROM() {
+float getCurrentCriticalEEPROM()
+{
   float threshold = 0.0f;
   EEPROM.get(CURRENT_CRITICAL_EEPROM_ADDR, threshold);
   return threshold;

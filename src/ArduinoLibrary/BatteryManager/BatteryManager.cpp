@@ -1,210 +1,240 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <BatteryManager.h>
+#include "BatteryManager.h"
 
-BatteryManager::BatteryManager(uint8_t addr) {
-     i2caddress = addr;
+BatteryManager::BatteryManager()
+{
 }
 
-BatteryManager::~BatteryManager() {
-
+BatteryManager::~BatteryManager()
+{
 }
 
-void BatteryManager::begin() {
-     Wire.begin();
+void BatteryManager::begin(uint8_t address)
+{
+  wire_address = address;
 }
 
-float BatteryManager::getCellVoltage(uint8_t cell) {
-  byte reg;
-  switch (cell) {
+void BatteryManager::printDetails()
+{
+  Serial.println("============ Settings loaded from EEPROM: ============");
+  Serial.print("Cell Charged (V): ");
+  Serial.println(getCellChargedVoltage());
+  Serial.print("Cell Nominal (V): ");
+  Serial.println(getCellNominalVoltage());
+  Serial.print("Cell Critical (V): ");
+  Serial.println(getCellCriticalVoltage());
+  Serial.print("Temp Resolution (b): ");
+  Serial.println(getTempResolution());
+  Serial.print("Temp Overheat Warn (C): ");
+  Serial.println(getOverheatWarningTemperature());
+  Serial.print("Temp Overheat Crit (C): ");
+  Serial.println(getOverheatCriticalTemperature());
+  Serial.print("Temp Underheat Warn (C): ");
+  Serial.println(getUnderheatWarningTemperature());
+  Serial.print("Temp Underheat Crit (C): ");
+  Serial.println(getUnderheatCriticalTemperature());
+  Serial.print("Current Warn (mA): ");
+  Serial.println(getCurrentWarning());
+  Serial.print("Current Crit (mA): ");
+  Serial.println(getCurrentCritical());
+  Serial.println();
+}
+
+// ============ Get Battery Values ============
+float BatteryManager::getCellVoltage(uint8_t index)
+{
+  MessageType reg;
+  switch (index)
+  {
     case 0:
-      reg = CELL_0_VOLTAGE_REGISTER;
+      reg = CELL_0_VOLTAGE;
       break;
     case 1:
-      reg = CELL_1_VOLTAGE_REGISTER;
+      reg = CELL_1_VOLTAGE;
       break;
     case 2:
-      reg = CELL_2_VOLTAGE_REGISTER;
+      reg = CELL_2_VOLTAGE;
       break;
     case 3:
-      reg = CELL_3_VOLTAGE_REGISTER;
-      break;
-    case 4:
-      reg = CELL_4_VOLTAGE_REGISTER;
-      break;
-    case 5:
-      reg = CELL_5_VOLTAGE_REGISTER;
-      break;
-    case 6:
-      reg = CELL_6_VOLTAGE_REGISTER;
-      break;
-    case 7:
-      reg = CELL_7_VOLTAGE_REGISTER;
+      reg = CELL_3_VOLTAGE;
       break;
     default:
-      break;
+      return 0.0f;
   }
 
   return getFloat(reg);
 }
 
-float BatteryManager::getBatteryVoltage() {
-  //return getFloat(BATTERY_VOLTAGE_REGISTER);
-  float val = 0.0f;
-  readRegister(BATTERY_VOLTAGE_REGISTER, &val, sizeof(val));
-  return val;
+float BatteryManager::getBatteryVoltage()
+{
+  return getFloat(BATTERY_VOLTAGE);
 }
 
-float BatteryManager::getBatteryCurrent() {
-  return getFloat(BATTERY_CURRENT_REGISTER);
+float BatteryManager::getBatteryCurrent()
+{
+  return getFloat(BATTERY_CURRENT);
 }
 
-float BatteryManager::getBatteryPower() {
-  return getFloat(BATTERY_POWER_REGISTER);
+float BatteryManager::getBatteryPower()
+{
+  return getFloat(BATTERY_POWER);
 }
 
-float BatteryManager::getBatteryTemperature() {
-  return getFloat(BATTERY_TEMPERATURE_REGISTER);
+float BatteryManager::getBatteryTemperature()
+{
+  return getFloat(BATTERY_TEMPERATURE);
 }
 
-uint16_t BatteryManager::getBatteryErrors() {
-  return getuint16(BATTERY_ERROR_REGISTER);
+uint16_t BatteryManager::getBatteryErrors()
+{
+  return getUINT16(BATTERY_ERROR);
 }
 
-byte BatteryManager::getBatteryStatus() {
-  return getByte(BATTERY_STATUS_REGISTER);
+byte BatteryManager::getBatteryStatus()
+{
+  return getByte(BATTERY_STATUS);
 }
 
-float BatteryManager::getCellChargedVoltage() {
-  return getFloat(CELL_CHARGED_VOLTAGE_REGISTER);
+// ============ Get EEPROM Settings ============
+float BatteryManager::getCellChargedVoltage()
+{
+  return getFloat(CELL_CHARGED_VOLTAGE);
 }
-float BatteryManager::getCellNominalVoltage() {
-  return getFloat(CELL_NOMINAL_VOLTAGE_REGISTER);
+float BatteryManager::getCellNominalVoltage()
+{
+  return getFloat(CELL_NOMINAL_VOLTAGE);
 }
-float BatteryManager::getCellCriticalVoltage() {
-  return getFloat(CELL_CRITICAL_VOLTAGE_REGISTER);
+float BatteryManager::getCellCriticalVoltage()
+{
+  return getFloat(CELL_CRITICAL_VOLTAGE);
 }
-byte BatteryManager::getTempResolution() {
-  return getByte(TEMP_RESOLUTION_REGISTER);
+byte BatteryManager::getTempResolution()
+{
+  return getByte(TEMPERATURE_RESOLUTION);
 }
-float BatteryManager::getOverheatWarningTemperature() {
-  return getFloat(TEMP_OVERHEAT_WARNING_REGISTER);
+float BatteryManager::getOverheatWarningTemperature()
+{
+  return getFloat(TEMPERATURE_OVERHEAT_WARNING);
 }
-float BatteryManager::getOverheatCriticalTemperature() {
-  return getFloat(TEMP_OVERHEAT_CRITICAL_REGISTER);
+float BatteryManager::getOverheatCriticalTemperature()
+{
+  return getFloat(TEMPERATURE_OVERHEAT_CRITICAL);
 }
-float BatteryManager::getUnderheatWarningTemperature() {
-  return getFloat(TEMP_UNDERHEAT_WARNING_REGISTER);
+float BatteryManager::getUnderheatWarningTemperature()
+{
+  return getFloat(TEMPERATURE_UNDERHEAT_WARNING);
 }
-float BatteryManager::getUnderheatCriticalTemperature() {
-  return getFloat(TEMP_UNDERHEAT_CRITICAL_REGISTER);
+float BatteryManager::getUnderheatCriticalTemperature()
+{
+  return getFloat(TEMPERATURE_UNDERHEAT_CRITICAL);
 }
-float BatteryManager::getCurrentWarning() {
-  return getFloat(CURRENT_WARNING_REGISTER);
+float BatteryManager::getCurrentWarning()
+{
+  return getFloat(CURRENT_WARNING);
 }
-float BatteryManager::getCurrentCritical() {
-  return getFloat(CURRENT_CRITICAL_REGISTER);
-}
-
-
-void BatteryManager::setCellChargedVoltage(float voltage) {
-     writeRegister(CELL_CHARGED_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
-}
-void BatteryManager::setCellNominalVoltage(float voltage) {
-     writeRegister(CELL_NOMINAL_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
-}
-void BatteryManager::setCellCriticalVoltage(float voltage) {
-     writeRegister(CELL_CRITICAL_VOLTAGE_REGISTER, &voltage, sizeof(voltage));
-}
-void BatteryManager::setTempResolution(byte resolution) {
-     writeRegister(TEMP_RESOLUTION_REGISTER, &resolution, sizeof(resolution));
-}
-void BatteryManager::setOverheatWarningTemperature(float temperature) {
-     writeRegister(TEMP_OVERHEAT_WARNING_REGISTER, &temperature, sizeof(temperature));
-}
-void BatteryManager::setOverheatCriticalTemperature(float temperature) {
-     writeRegister(TEMP_OVERHEAT_CRITICAL_REGISTER, &temperature, sizeof(temperature));
-}
-void BatteryManager::setUnderheatWarningTemperature(float temperature) {
-     writeRegister(TEMP_UNDERHEAT_WARNING_REGISTER, &temperature, sizeof(temperature));
-}
-void BatteryManager::setUnderheatCriticalTemperature(float temperature) {
-     writeRegister(TEMP_UNDERHEAT_CRITICAL_REGISTER, &temperature, sizeof(temperature));
-}
-void BatteryManager::setCurrentWarning(float milliamps) {
-     writeRegister(CURRENT_WARNING_REGISTER, &milliamps, sizeof(milliamps));
-}
-void BatteryManager::setCurrentCritical(float milliamps) {
-     writeRegister(CURRENT_CRITICAL_REGISTER, &milliamps, sizeof(milliamps));
+float BatteryManager::getCurrentCritical()
+{
+  return getFloat(CURRENT_CRITICAL);
 }
 
-void BatteryManager::writeRegister(byte reg, const void* object, byte size) {
-     byte buffer[size];
-     memcpy(buffer, object, size);
-
-     Wire.beginTransmission(i2caddress);
-     Wire.write(reg);
-     Wire.write(buffer, size);
-     Wire.endTransmission();
+// ============ Set EEPROM Settings ============
+void BatteryManager::setCellChargedVoltage(float voltage)
+{
+  sendData(CELL_CHARGED_VOLTAGE, &voltage, sizeof(voltage));
+}
+void BatteryManager::setCellNominalVoltage(float voltage)
+{
+  sendData(CELL_NOMINAL_VOLTAGE, &voltage, sizeof(voltage));
+}
+void BatteryManager::setCellCriticalVoltage(float voltage)
+{
+  sendData(CELL_CRITICAL_VOLTAGE, &voltage, sizeof(voltage));
+}
+void BatteryManager::setTempResolution(byte resolution)
+{
+  sendData(TEMPERATURE_RESOLUTION, &resolution, sizeof(resolution));
+}
+void BatteryManager::setOverheatWarningTemperature(float temperature)
+{
+  sendData(TEMPERATURE_OVERHEAT_WARNING, &temperature, sizeof(temperature));
+}
+void BatteryManager::setOverheatCriticalTemperature(float temperature)
+{
+  sendData(TEMPERATURE_OVERHEAT_CRITICAL, &temperature, sizeof(temperature));
+}
+void BatteryManager::setUnderheatWarningTemperature(float temperature)
+{
+  sendData(TEMPERATURE_UNDERHEAT_WARNING, &temperature, sizeof(temperature));
+}
+void BatteryManager::setUnderheatCriticalTemperature(float temperature)
+{
+  sendData(TEMPERATURE_UNDERHEAT_CRITICAL, &temperature, sizeof(temperature));
+}
+void BatteryManager::setCurrentWarning(float milliamps)
+{
+  sendData(CURRENT_WARNING, &milliamps, sizeof(milliamps));
+}
+void BatteryManager::setCurrentCritical(float milliamps)
+{
+  sendData(CURRENT_CRITICAL, &milliamps, sizeof(milliamps));
 }
 
-void BatteryManager::readRegister(byte reg, const void* object, byte size) {
-     //Set the register to the desired value to be read
-     Wire.beginTransmission(i2caddress);
-     Wire.write(reg);
-     Wire.endTransmission();
+void BatteryManager::getData(MessageType message_type, void *destination, uint8_t num_bytes)
+{
+  sendData(REQUEST_TYPE, &message_type, sizeof(byte));
 
-     //Request desired value
-     Wire.requestFrom(i2caddress, size);
+  //Trigger request event on slave
+  Wire.requestFrom(wire_address, num_bytes);
 
-     byte buffer[size];
-     for (int i = 0; i < size; i++) {
-          *(buffer+i) = Wire.read();
-     }
-     memcpy(&object, buffer, size);
-}
-
-float BatteryManager::getFloat(byte reg) {
-  float val;
-
-  //Set the register to the desired value to be read
-  Wire.beginTransmission(i2caddress);
-  //TODO replace value with declared const
-  Wire.write(reg);
-  Wire.endTransmission();
-  //Request desired value
-  Wire.requestFrom(i2caddress, sizeof(float));
-
-
-  byte floatBuffer[sizeof(float)];
-  if (Wire.available()) {
-    for (int i = 0; i < sizeof(floatBuffer); i++) {
-      floatBuffer[i] = Wire.read();
-    }
-    memcpy(&val, floatBuffer, sizeof(floatBuffer));
+  unsigned long wait_start = millis();
+  while ( (Wire.available() <= 0) && (millis() - wait_start < REQUEST_TIMEOUT));
+  if(millis() - wait_start >= REQUEST_TIMEOUT) {
+    Serial.println("I2C REQUEST TIMEOUT");
+    return;
   }
 
-  return val;
+  num_bytes = Wire.available();
+  byte received_bytes[num_bytes];
+  for (int i = 0; i < num_bytes; i++)
+  {
+    received_bytes[i] = Wire.read();
+  }
+  memcpy(destination, received_bytes, num_bytes);
 }
 
-uint16_t BatteryManager::getuint16(byte reg) {
-  //Set the register to the desired value to be read
-  Wire.beginTransmission(i2caddress);
-  //TODO replace value with declared const
-  Wire.write(reg);
-  Wire.endTransmission();
-  //Request desired value
-  Wire.requestFrom(i2caddress, sizeof(uint16_t));
-  return ((Wire.read()<<8) | Wire.read());
+float BatteryManager::getFloat(MessageType message_type)
+{
+  float value;
+  getData(message_type, &value, sizeof(value));
+  return value;
 }
 
-byte BatteryManager::getByte(byte reg) {
-  //Set the register to the desired value to be read
-  Wire.beginTransmission(i2caddress);
-  //TODO replace value with declared const
-  Wire.write(reg);
+byte BatteryManager::getByte(MessageType message_type)
+{
+  byte value;
+  getData(message_type, &value, sizeof(value));
+  return value;
+}
+
+uint16_t BatteryManager::getUINT16(MessageType message_type)
+{
+  uint16_t value;
+  getData(message_type, &value, sizeof(value));
+  return value;
+}
+
+void BatteryManager::sendData(MessageType message_type, const void *value, uint8_t num_bytes)
+{
+  byte send_bytes[sizeof(MessageHeader) + num_bytes];
+
+  MessageHeader header;
+  header.message_type = message_type;
+  memcpy(send_bytes, &header, sizeof(MessageHeader));
+
+  memcpy(send_bytes + sizeof(MessageHeader), value, num_bytes);
+
+  Wire.beginTransmission(wire_address);
+  Wire.write(send_bytes, sizeof(MessageHeader) + num_bytes);
   Wire.endTransmission();
-  //Request desired value
-  Wire.requestFrom(i2caddress, sizeof(float));
-  return Wire.read();
 }
