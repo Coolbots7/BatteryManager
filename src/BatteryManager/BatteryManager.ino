@@ -77,6 +77,7 @@ enum MessageType
   CURRENT_WARNING = 0x09,
   CURRENT_CRITICAL = 0x0A,
   REQUEST_TYPE = 0x0B,
+  LED_BRIGHTNESS = 0x0C,
   //Constants to represent the intended value being requested from the battery manager
   CELL_0_VOLTAGE = 0x81,
   CELL_1_VOLTAGE = 0x82,
@@ -235,14 +236,17 @@ void setup()
 
   //Detect the number of cells
   num_cells = 0;
-  for(int i=3;i>0; i--) {
+  for (int i = 3; i > 0; i--)
+  {
     float voltage = GetCellVoltage(i);
-    if(voltage >= 2.0f) {
-      num_cells = i+1;
+    if (voltage >= 2.0f)
+    {
+      num_cells = i + 1;
       break;
     }
   }
-  Serial.print(num_cells); Serial.println(" cells detected.");
+  Serial.print(num_cells);
+  Serial.println(" cells detected.");
 
   Wire.begin(WIRE_ID);
   Wire.onRequest(requestEvent);
@@ -506,6 +510,10 @@ void receiveEvent(int num_bytes)
   case REQUEST_TYPE:
     memcpy(&request_type, receive_data, sizeof(request_type));
     break;
+  case LED_BRIGHTNESS:
+    memcpy(&led_brightness, receive_data, sizeof(led_brightness));
+    setLEDBrightnessEEPROM(led_brightness);
+    break;
   }
 }
 
@@ -611,7 +619,8 @@ void requestEvent()
     float current_critical = getCurrentCriticalEEPROM();
     sendData(&current_critical, sizeof(current_critical));
   }
-  else if(request_type == CELL_COUNT) {
+  else if (request_type == CELL_COUNT)
+  {
     sendData(&num_cells, sizeof(num_cells));
   }
 }
@@ -747,10 +756,12 @@ float getCurrentCriticalEEPROM()
 }
 
 //LED brightness
-void setLEDBrightnessEEPROM(uint8_t brightness) {
+void setLEDBrightnessEEPROM(uint8_t brightness)
+{
   EEPROM.put(LED_BRIGHTNESS_EEPROM_ADDR, brightness);
 }
-uint8_t getLEDBrightnessEEPROM() {
+uint8_t getLEDBrightnessEEPROM()
+{
   uint8_t brightness = 0;
   EEPROM.get(LED_BRIGHTNESS_EEPROM_ADDR, brightness);
   return brightness;

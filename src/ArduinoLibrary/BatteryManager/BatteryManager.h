@@ -35,6 +35,7 @@ enum MessageType
   CURRENT_WARNING = 0x09,
   CURRENT_CRITICAL = 0x0A,
   REQUEST_TYPE = 0x0B,
+  LED_BRIGHTNESS = 0x0C,
   //Constants to represent the intended value being requested from the battery manager
   CELL_0_VOLTAGE = 0x81,
   CELL_1_VOLTAGE = 0x82,
@@ -109,6 +110,7 @@ class BatteryManager
     void setUnderheatCriticalTemperature(float);
     void setCurrentWarning(float);
     void setCurrentCritical(float);
+    void setLEDBrightness(uint8_t);
 
   private:
     uint8_t wire_address;

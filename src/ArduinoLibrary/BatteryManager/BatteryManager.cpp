@@ -184,6 +184,10 @@ void BatteryManager::setCurrentCritical(float milliamps)
 {
   sendData(CURRENT_CRITICAL, &milliamps, sizeof(milliamps));
 }
+void BatteryManager::setLEDBrightness(uint8_t brightness)
+{
+  sendData(LED_BRIGHTNESS, &brightness, sizeof(brightness));
+}
 
 void BatteryManager::getData(MessageType message_type, void *destination, uint8_t num_bytes)
 {
