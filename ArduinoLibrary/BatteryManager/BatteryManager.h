@@ -66,6 +66,7 @@
  private:
       uint8_t i2caddress;
       void writeRegister(byte reg, const void* object, byte size);
+      void readRegister(byte reg, const void* object, byte size);
       float getFloat(byte reg);
       uint16_t getuint16(byte reg);
       byte getByte(byte reg);

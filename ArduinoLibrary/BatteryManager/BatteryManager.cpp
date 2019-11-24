@@ -49,7 +49,10 @@ float BatteryManager::getCellVoltage(uint8_t cell) {
 }
 
 float BatteryManager::getBatteryVoltage() {
-  return getFloat(BATTERY_VOLTAGE_REGISTER);
+  //return getFloat(BATTERY_VOLTAGE_REGISTER);
+  float val = 0.0f;
+  readRegister(BATTERY_VOLTAGE_REGISTER, &val, sizeof(val));
+  return val;
 }
 
 float BatteryManager::getBatteryCurrent() {
@@ -143,6 +146,22 @@ void BatteryManager::writeRegister(byte reg, const void* object, byte size) {
      Wire.write(reg);
      Wire.write(buffer, size);
      Wire.endTransmission();
+}
+
+void BatteryManager::readRegister(byte reg, const void* object, byte size) {
+     //Set the register to the desired value to be read
+     Wire.beginTransmission(i2caddress);
+     Wire.write(reg);
+     Wire.endTransmission();
+
+     //Request desired value
+     Wire.requestFrom(i2caddress, size);
+
+     byte buffer[size];
+     for (int i = 0; i < size; i++) {
+          *(buffer+i) = Wire.read();
+     }
+     memcpy(&object, buffer, size);
 }
 
 float BatteryManager::getFloat(byte reg) {
