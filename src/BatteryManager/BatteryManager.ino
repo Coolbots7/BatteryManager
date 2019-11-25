@@ -325,7 +325,6 @@ Battery updateBattery()
 {
   Battery battery;
 
-  //BUG when battery is disconnected cell 0 voltage is approx 0v but cell 1 voltge is ~18v, this causes both cell over and under voltage errors
   for (int i = 0; i < num_cells; i++)
   {
     battery.cell_voltages[i] = GetCellVoltage(i);
@@ -342,25 +341,27 @@ Battery updateBattery()
   battery.errors = 0x00;
 
   //Detect if battery is present
-  if (battery.voltage < 1.0f)
+  if (battery.voltage <= 1.0f)
   {
     battery.errors |= BATTERY_NOT_PRESENT;
   }
-
-  for (int i = 0; i < num_cells; i++)
+  else
   {
-    if (battery.cell_voltages[i] >= cell_charged_voltage)
+    for (int i = 0; i < num_cells; i++)
     {
-      battery.errors |= CELL_OVERVOLTAGE_FLAG;
-    }
+      if (battery.cell_voltages[i] >= cell_charged_voltage)
+      {
+        battery.errors |= CELL_OVERVOLTAGE_FLAG;
+      }
 
-    if (battery.cell_voltages[i] <= cell_critical_voltage)
-    {
-      battery.errors |= CELL_CRITICAL_FLAG;
-    }
-    else if (battery.cell_voltages[i] <= cell_nominal_voltage)
-    {
-      battery.errors |= CELL_LOW_FLAG;
+      if (battery.cell_voltages[i] <= cell_critical_voltage)
+      {
+        battery.errors |= CELL_CRITICAL_FLAG;
+      }
+      else if (battery.cell_voltages[i] <= cell_nominal_voltage)
+      {
+        battery.errors |= CELL_LOW_FLAG;
+      }
     }
   }
 
