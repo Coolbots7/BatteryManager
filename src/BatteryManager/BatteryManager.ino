@@ -277,6 +277,7 @@ void setup()
   ina219.begin();
 
   //Detect the number of cells
+  Serial.println("Detecting cell count... ");
   num_cells = 0;
   for (int i = 3; i > 0; i--)
   {
@@ -311,27 +312,27 @@ void loop()
     //Update battery current values, errors, and status
     battery = updateBattery();
 
-    //    for (int i = 0; i < num_cells; i++)
-    //    {
-    //      Serial.print("Cell ");
-    //      Serial.print(i);
-    //      Serial.print(" Voltage: ");
-    //      Serial.println(battery.cell_voltages[i], 4);
-    //    }
-    //
-    //    Serial.print("Battery Voltage: ");
-    //    Serial.println(battery.voltage, 4);
-    //    Serial.print("Current (mA): ");
-    //    Serial.println(battery.current, 4);
-    //    Serial.print("Power (mW): ");
-    //    Serial.println(battery.power, 4);
-    //    Serial.print("Temperature (C): ");
-    //    Serial.println(battery.temperature, 4);
-    //    Serial.print("Errors: ");
-    //    Serial.println(battery.errors, BIN);
-    //    Serial.print("Status: ");
-    //    Serial.println(battery.status);
-    //    Serial.println();
+    for (int i = 0; i < num_cells; i++)
+    {
+      Serial.print("Cell ");
+      Serial.print(i);
+      Serial.print(" Voltage: ");
+      Serial.println(battery.cell_voltages[i], 4);
+    }
+
+    Serial.print("Battery Voltage: ");
+    Serial.println(battery.voltage, 4);
+    Serial.print("Current (mA): ");
+    Serial.println(battery.current, 4);
+    Serial.print("Power (mW): ");
+    Serial.println(battery.power, 4);
+    Serial.print("Temperature (C): ");
+    Serial.println(battery.temperature, 4);
+    Serial.print("Errors: ");
+    Serial.println(battery.errors, BIN);
+    Serial.print("Status: ");
+    Serial.println(battery.status);
+    Serial.println();
   }
 }
 
