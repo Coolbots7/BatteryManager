@@ -6,8 +6,14 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-//TODO allow address selection
-#define WIRE_ID 8
+//Define address select pins
+#define ADDRESS_BIT_0_PIN 4
+#define ADDRESS_BIT_1_PIN 5
+//Define address options
+#define WIRE_ADDRESS_0 0x50
+#define WIRE_ADDRESS_1 0x51
+#define WIRE_ADDRESS_2 0x52
+#define WIRE_ADDRESS_3 0x53
 
 //Pin used to communicate with the status RGB LED
 #define LED_ONE_WIRE_PIN 6
@@ -291,8 +297,29 @@ void setup()
   Serial.print(num_cells);
   Serial.println(" cells detected.");
 
+  //Set address select pins as inputs
+  pinMode(ADDRESS_BIT_0_PIN, INPUT);
+  pinMode(ADDRESS_BIT_1_PIN, INPUT);
+
+  //Check which address select pins are pulled high and set the address accordingly
+  bool address_bit_0_pin = digitalRead(ADDRESS_BIT_0_PIN);
+  bool address_bit_1_pin = digitalRead(ADDRESS_BIT_1_PIN);
+  byte wire_address = WIRE_ADDRESS_0;
+  if (!address_bit_0_pin && !address_bit_1_pin) {
+    wire_address = WIRE_ADDRESS_0;
+  }
+  else if (address_bit_0_pin && !address_bit_1_pin) {
+    wire_address = WIRE_ADDRESS_1;
+  }
+  else if (!address_bit_0_pin && address_bit_1_pin) {
+    wire_address = WIRE_ADDRESS_2;
+  }
+  else if (address_bit_0_pin && address_bit_1_pin) {
+    wire_address = WIRE_ADDRESS_3;
+  }
+
   //Start I2C as slave
-  Wire.begin(WIRE_ID);
+  Wire.begin(wire_address);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
 }
