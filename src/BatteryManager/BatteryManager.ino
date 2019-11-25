@@ -9,8 +9,10 @@
 //TODO allow address selection
 #define WIRE_ID 8
 
+//Pin used to communicate with the status RGB LED
 #define LED_ONE_WIRE_PIN 6
 
+//Pin used to communicate with the temperature sensor
 #define TEMP_ONE_WIRE_PIN 2
 
 //Pin to flash EEPROM to defaults when held high on boot
@@ -19,6 +21,10 @@
 //Address of the ADC for cells 0-3
 #define ADC_0_ADDR 0x48
 
+//Address of the INA219 current sensor
+#define CURRENT_SENSOR_ADDRESS 0x40
+
+//EEPROM addresses of BMS configuration values
 #define CELL_CHARGED_VOLTAGE_EEPROM_ADDR 0     //0-3
 #define CELL_NOMINAL_VOLTAGE_EEPROM_ADDR 4     //4-7
 #define CELL_CRITICAL_VOLTAGE_EEPROM_ADDR 8    //8-11
@@ -32,18 +38,25 @@
 #define LED_BRIGHTNESS_EEPROM_ADDR 37          //37
 #define REFRESH_RATE_EEPROM_ADDR 38            //38
 
+//Create status RGB LED object
 Adafruit_NeoPixel status_LED(1, LED_ONE_WIRE_PIN, NEO_GRB);
 
+//Create one wire communication object and temperature sensor object
 OneWire oneWire(TEMP_ONE_WIRE_PIN);
 DallasTemperature temperature_sensor(&oneWire);
 
+//Gain of the ADC
 #define ADC_GAIN GAIN_TWOTHIRDS
+//Create ADC object for cells 0-3
 Adafruit_ADS1115 ads_0(ADC_0_ADDR);
+//Resistance values used for R1 in the voltage divider calculation
 const float VOLTAGE_DIVIDER_R1[] = {
     0.0f,
     1.764f,
     1.468f,
     6.650f};
+
+//Resistance values used for R@ in the voltage divider calculation
 const float VOLTAGE_DIVIDER_R2[] = {
     1.0f,
     3.290f,
@@ -119,37 +132,37 @@ enum BatteryStatus
   CRITICAL = 0x02
 };
 
-Adafruit_INA219 ina219;
+Adafruit_INA219 ina219(CURRENT_SENSOR_ADDRESS);
 
+//Global configuration values initialized from EEPROM on boot
 uint8_t refresh_rate;
-
-uint8_t num_cells;
-
 float cell_charged_voltage;
 float cell_nominal_voltage;
 float cell_critical_voltage;
-
 uint8_t temperature_resolution;
 float temperature_overheat_warning;
 float temperature_overheat_critical;
 float temperature_underheat_warning;
 float temperature_underheat_critical;
-
 float current_warning;
 float current_critical;
-
 uint8_t led_brightness;
 
+//Global variables
+uint8_t num_cells;
 byte request_type = 0x00;
 
 void setup()
 {
   Serial.begin(115200);
 
+  //Start status RGB LED
   status_LED.begin();
 
+  //Set EEPROM flash pin as input
   pinMode(EEPROM_FLASH_PIN, INPUT);
 
+  //If EEPROM flash pin is high on boot
   if (digitalRead(EEPROM_FLASH_PIN) == HIGH)
   {
     //Wait to confirm EEPROM flash
@@ -170,18 +183,14 @@ void setup()
       setCellChargedVoltageEEPROM(4.2f);
       setCellNominalVoltageEEPROM(3.7f);
       setCellCriticalVoltageEEPROM(3.0f);
-
       setTempResolutionEEPROM(12);
       setTempOverheatWarningEEPROM(50);
       setTempOverheatCriticalEEPROM(60);
       setTempUnderheatWarningEEPROM(10);
       setTempUnderheatCriticalEEPROM(0);
-
       setCurrentWarningEEPROM(25000);
       setCurrentCriticalEEPROM(32000);
-
       setLEDBrightnessEEPROM(70);
-
       setRefreshRateEEPROM(1);
 
       //Indicate EEPROM flash is complete
@@ -211,23 +220,21 @@ void setup()
     }
   }
 
+  //Load configuration from EERPOM on boot
   refresh_rate = getRefreshRateEEPROM();
-
   temperature_resolution = getTempResolutionEEPROM();
   temperature_overheat_critical = getTempOverheatCriticalEEPROM();
   temperature_underheat_critical = getTempUnderheatCriticalEEPROM();
   temperature_overheat_warning = getTempOverheatWarningEEPROM();
   temperature_underheat_warning = getTempUnderheatWarningEEPROM();
-
   current_warning = getCurrentWarningEEPROM();
   current_critical = getCurrentCriticalEEPROM();
-
   cell_charged_voltage = getCellChargedVoltageEEPROM();
   cell_nominal_voltage = getCellNominalVoltageEEPROM();
   cell_critical_voltage = getCellCriticalVoltageEEPROM();
-
   led_brightness = getLEDBrightnessEEPROM();
 
+  //Debug configurations loaded from EEPROM on boot
   Serial.println("Settings loaded from EEPROM:");
   Serial.print("Refresh Rate (Hz): ");
   Serial.println(refresh_rate);
@@ -255,15 +262,18 @@ void setup()
   Serial.println(led_brightness);
   Serial.println();
 
+  //Start and configure temperature sensor
   temperature_sensor.begin();
   temperature_sensor.setResolution(temperature_resolution);
   temperature_sensor.setWaitForConversion(false);
   temperature_sensor.setCheckForConversion(true);
   temperature_sensor.requestTemperatures();
 
+  //Start and configure ADC for cells 0-3
   ads_0.begin();
   ads_0.setGain(ADC_GAIN);
 
+  //Start and configure current sensor
   ina219.begin();
 
   //Detect the number of cells
@@ -280,11 +290,10 @@ void setup()
   Serial.print(num_cells);
   Serial.println(" cells detected.");
 
+  //Start I2C as slave
   Wire.begin(WIRE_ID);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
-
-  delay(2000);
 }
 
 Battery battery;
@@ -299,6 +308,7 @@ void loop()
   {
     prevPollTime = millis();
 
+    //Update battery current values, errors, and status
     battery = updateBattery();
 
     //    for (int i = 0; i < num_cells; i++)
@@ -329,28 +339,33 @@ Battery updateBattery()
 {
   Battery battery;
 
+  //Get cell voltages
   for (int i = 0; i < num_cells; i++)
   {
     battery.cell_voltages[i] = GetCellVoltage(i);
   }
 
-  //battery.voltage = GetBankVoltageAtIndex(num_cells - 1);
-  //another option: use ina219 to calcuate load voltage
+  //Get battery voltage, current, and power
   battery.voltage = ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000);
   battery.current = ina219.getCurrent_mA();
   battery.power = ina219.getPower_mW();
 
+  //Get battery temperature
   battery.temperature = temperature_sensor.getTempCByIndex(0);
 
+  //Initialize battery errors
   battery.errors = 0x00;
 
   //Detect if battery is present
   if (battery.voltage <= 1.0f)
   {
+    //Battery is not present
     battery.errors |= BATTERY_NOT_PRESENT;
   }
   else
   {
+    //Battery is present
+    //Check cell voltages
     for (int i = 0; i < num_cells; i++)
     {
       if (battery.cell_voltages[i] >= cell_charged_voltage)
@@ -396,6 +411,7 @@ Battery updateBattery()
     battery.errors |= CURRENT_WARNING_FLAG;
   }
 
+  //Initialize battery status
   battery.status = OK;
   if (
       battery.errors & CELL_OVERVOLTAGE_FLAG ||
@@ -417,6 +433,7 @@ Battery updateBattery()
     battery.status = CRITICAL;
   }
 
+  //Update status RGB LED
   if (battery.status == OK)
   {
     status_LED.fill(status_LED.Color(0, led_brightness, 0));
