@@ -203,21 +203,11 @@ void BatteryManager::setRefreshRate(uint8_t refresh_rate)
 
 void BatteryManager::getData(MessageType message_type, void *destination, uint8_t num_bytes)
 {
+  //Set the data being requested on the slave
   sendData(REQUEST_TYPE, &message_type, sizeof(byte));
 
   //Trigger request event on slave
   Wire.requestFrom(wire_address, num_bytes);
-
-  unsigned long wait_start = millis();
-  while ((Wire.available() <= 0) && (millis() - wait_start < REQUEST_TIMEOUT))
-    ;
-  if (millis() - wait_start >= REQUEST_TIMEOUT)
-  {
-    Serial.println("I2C REQUEST TIMEOUT");
-    return;
-  }
-
-  num_bytes = Wire.available();
   byte received_bytes[num_bytes];
   for (int i = 0; i < num_bytes; i++)
   {
