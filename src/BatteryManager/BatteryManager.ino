@@ -228,6 +228,33 @@ void setup()
 
   led_brightness = getLEDBrightnessEEPROM();
 
+  Serial.println("Settings loaded from EEPROM:");
+  Serial.print("Refresh Rate (Hz): ");
+  Serial.println(refresh_rate);
+  Serial.print("Cell Charged (V): ");
+  Serial.println(cell_charged_voltage);
+  Serial.print("Cell Nominal (V): ");
+  Serial.println(cell_nominal_voltage);
+  Serial.print("Cell Critical (V): ");
+  Serial.println(cell_critical_voltage);
+  Serial.print("Temp Resolution: ");
+  Serial.println(temperature_resolution);
+  Serial.print("Temp Overheat Warn (C): ");
+  Serial.println(temperature_overheat_warning);
+  Serial.print("Temp Overheat Crit (C): ");
+  Serial.println(temperature_overheat_critical);
+  Serial.print("Temp Underheat Warn (C): ");
+  Serial.println(temperature_underheat_warning);
+  Serial.print("Temp Underheat Crit (C): ");
+  Serial.println(temperature_underheat_critical);
+  Serial.print("Current Warn (mA): ");
+  Serial.println(current_warning);
+  Serial.print("Current Crit (mA): ");
+  Serial.println(current_critical);
+  Serial.print("LED Brightness: ");
+  Serial.println(led_brightness);
+  Serial.println();
+
   temperature_sensor.begin();
   temperature_sensor.setResolution(temperature_resolution);
   temperature_sensor.setWaitForConversion(false);
@@ -256,29 +283,6 @@ void setup()
   Wire.begin(WIRE_ID);
   Wire.onRequest(requestEvent);
   Wire.onReceive(receiveEvent);
-
-  Serial.println("Settings loaded from EEPROM:");
-  Serial.print("Cell Charged (V): ");
-  Serial.println(cell_charged_voltage);
-  Serial.print("Cell Nominal (V): ");
-  Serial.println(cell_nominal_voltage);
-  Serial.print("Cell Critical (V): ");
-  Serial.println(cell_critical_voltage);
-  Serial.print("Temp Resolution: ");
-  Serial.println(temperature_resolution);
-  Serial.print("Temp Overheat Warn (C): ");
-  Serial.println(temperature_overheat_warning);
-  Serial.print("Temp Overheat Crit (C): ");
-  Serial.println(temperature_overheat_critical);
-  Serial.print("Temp Underheat Warn (C): ");
-  Serial.println(temperature_underheat_warning);
-  Serial.print("Temp Underheat Crit (C): ");
-  Serial.println(temperature_underheat_critical);
-  Serial.print("Current Warn (mA): ");
-  Serial.println(current_warning);
-  Serial.print("Current Crit (mA): ");
-  Serial.println(current_critical);
-  Serial.println();
 
   delay(2000);
 }
