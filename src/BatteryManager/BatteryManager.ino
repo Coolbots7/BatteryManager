@@ -589,52 +589,42 @@ void requestEvent()
   }
   else if (request_type == CELL_CHARGED_VOLTAGE)
   {
-    float cell_charged_voltage = getCellChargedVoltageEEPROM();
     sendData(&cell_charged_voltage, sizeof(cell_charged_voltage));
   }
   else if (request_type == CELL_NOMINAL_VOLTAGE)
   {
-    float cell_nominal_voltage = getCellNominalVoltageEEPROM();
     sendData(&cell_nominal_voltage, sizeof(cell_nominal_voltage));
   }
   else if (request_type == CELL_CRITICAL_VOLTAGE)
   {
-    float cell_critical_voltage = getCellCriticalVoltageEEPROM();
     sendData(&cell_critical_voltage, sizeof(cell_critical_voltage));
   }
   else if (request_type == TEMPERATURE_RESOLUTION)
   {
-    uint8_t temperature_resolution = getTempResolutionEEPROM();
     sendData(&temperature_resolution, sizeof(temperature_resolution));
   }
   else if (request_type == TEMPERATURE_OVERHEAT_WARNING)
   {
-    float temperature_overheat_warning = getTempOverheatWarningEEPROM();
     sendData(&temperature_overheat_warning, sizeof(temperature_overheat_warning));
   }
   else if (request_type == TEMPERATURE_OVERHEAT_CRITICAL)
   {
-    float temperature_overheat_critical = getTempOverheatCriticalEEPROM();
     sendData(&temperature_overheat_critical, sizeof(temperature_overheat_critical));
   }
   else if (request_type == TEMPERATURE_UNDERHEAT_WARNING)
   {
-    float temperature_underheat_warning = getTempUnderheatWarningEEPROM();
     sendData(&temperature_underheat_warning, sizeof(temperature_underheat_warning));
   }
   else if (request_type == TEMPERATURE_UNDERHEAT_CRITICAL)
   {
-    float temperature_underheat_critical = getTempUnderheatCriticalEEPROM();
     sendData(&temperature_underheat_critical, sizeof(temperature_underheat_critical));
   }
   else if (request_type == CURRENT_WARNING)
   {
-    float current_warning = getCurrentWarningEEPROM();
     sendData(&current_warning, sizeof(current_warning));
   }
   else if (request_type == CURRENT_CRITICAL)
   {
-    float current_critical = getCurrentCriticalEEPROM();
     sendData(&current_critical, sizeof(current_critical));
   }
   else if (request_type == CELL_COUNT)
