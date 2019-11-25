@@ -63,7 +63,7 @@ enum BatteryError
   TEMPERATURE_UNDERHEAT_CRITICAL_FLAG = 0x40,
   CURRENT_WARNING_FLAG = 0x80,
   CURRENT_CRITICAL_FLAG = 0x100,
-  //IDEA battery disconected error
+  BATTERY_NOT_PRESENT = 0x200
 };
 
 struct MessageHeader

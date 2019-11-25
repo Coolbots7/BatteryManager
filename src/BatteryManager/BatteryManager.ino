@@ -107,8 +107,8 @@ enum BatteryError
   TEMPERATURE_UNDERHEAT_WARNING_FLAG = 0x20,
   TEMPERATURE_UNDERHEAT_CRITICAL_FLAG = 0x40,
   CURRENT_WARNING_FLAG = 0x80,
-  CURRENT_CRITICAL_FLAG = 0x100
-  //IDEA battery disconected error
+  CURRENT_CRITICAL_FLAG = 0x100,
+  BATTERY_NOT_PRESENT = 0x200
 };
 
 //Constant values to represent the current status of the battery
@@ -340,6 +340,13 @@ Battery updateBattery()
   battery.temperature = temperature_sensor.getTempCByIndex(0);
 
   battery.errors = 0x00;
+
+  //Detect if battery is present
+  if (battery.voltage < 1.0f)
+  {
+    battery.errors |= BATTERY_NOT_PRESENT;
+  }
+
   for (int i = 0; i < num_cells; i++)
   {
     if (battery.cell_voltages[i] >= cell_charged_voltage)
@@ -399,7 +406,8 @@ Battery updateBattery()
       battery.errors & CELL_CRITICAL_FLAG ||
       battery.errors & TEMPERATURE_UNDERHEAT_CRITICAL_FLAG ||
       battery.errors & TEMPERATURE_OVERHEAT_CRITICAL_FLAG ||
-      battery.errors & CURRENT_CRITICAL_FLAG)
+      battery.errors & CURRENT_CRITICAL_FLAG ||
+      battery.errors & BATTERY_NOT_PRESENT)
   {
     battery.status = CRITICAL;
   }
@@ -636,7 +644,8 @@ void requestEvent()
   {
     sendData(&led_brightness, sizeof(led_brightness));
   }
-  else if(request_type == REFRESH_RATE) {
+  else if (request_type == REFRESH_RATE)
+  {
     sendData(&refresh_rate, sizeof(refresh_rate));
   }
 }
